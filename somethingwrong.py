@@ -9,6 +9,7 @@ import urequests
 import network
 import time
 import _thread
+from I2C_LCD import I2CLcd
 TERMINATION_CHAR = '\n'
 #TERMINATION_CHAR = '/'
 
@@ -120,7 +121,6 @@ def bodyguard_master_receiver(s,):
             #temp = msg.split("/")
             print(msg)
             temp = msg.split(TERMINATION_CHAR)
-            #temp = msg.split()
             print(temp)
             msg = temp[-2]
             
@@ -232,7 +232,7 @@ def main():
             lcd.putstr("Bodyguard Master")
             lcd.move_to(0, 1)
             lcd.putstr("Initialization..")
-            count = 0
+            #count = 0
             lcd_exist = True
         else:
             lcd_exist = False
@@ -258,7 +258,7 @@ def main():
     uart = UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
     uart.init(bits=8, parity=None, stop=2)
 
-    uart.write(bytes('Bodyguard Pico start...',"utf-8"))
+    uart.write('Bodyguard Pico start...')
     
     #Ethernet initialization
     w5100_init()
@@ -308,7 +308,7 @@ def main():
                 time.sleep(1)
                 
             
-        if not photoeye_npn.value(): #Blocked == 0
+        if photoeye_npn.value() is 0: #Blocked
             if  state_dict['Photoeye'] == 'OFF':
                 state_dict['Photoeye'] = 'ON'
                 
@@ -322,8 +322,6 @@ def main():
                 state_dict['Channel3'] = 'ON'
                 
                 s.send(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
-                uart.write(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
-
                 print(f"Photoeye:{state_dict['Photoeye']}")    
 
                 if (lcd_exist == True):
@@ -339,7 +337,7 @@ def main():
         else:
             if  state_dict['Photoeye'] == 'ON':
                 time.sleep(0.2) #Anti disruption
-                if photoeye_npn.value(): # == 1
+                if photoeye_npn.value() is 1:
                     state_dict['Photoeye'] = 'OFF'
                     
                     Channel0.value(False)   #OFF
@@ -352,8 +350,6 @@ def main():
                     state_dict['Channel3'] = 'OFF'
                 
                     s.send(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
-                    uart.write(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
-                    
                     print(f"Photoeye:{state_dict['Photoeye']}")
                     if (lcd_exist == True):
                         lcd.clear()
@@ -374,16 +370,7 @@ def main():
             #LED.value(toggle)
             
             #print(state_dict.items())
-            try:
-                s.send(bytes(f"{state_dict.items()} ","utf-8"))
-                #if disconnected for some reason, OSError: [Errno 104] ECONNRESET
-            except:
-                while True:
-                    print("Socket connection is dropped, waiting for self reset")
-                    time.sleep(1)
-
-
-            uart.write(bytes(f"{state_dict.items()} ","utf-8"))
+            s.send(bytes(f"{state_dict.items()} ","utf-8"))
             #print("tower is alive...")
             if page_reading_mode == False:
                 if (lcd_exist == True):
@@ -401,20 +388,13 @@ def main():
             
             if uart.any(): 
                 data = uart.read()
-                uart.write(f"uart receiced {data}")
-                command_serial = data.decode('utf-8')
+                uart.write(data)
                 if (lcd_exist == True):
                     lcd.clear()
                     lcd.move_to(0, 0)
-                    lcd.putstr("Serial Received")
+                    lcd.putstr("Received as:")
                     lcd.move_to(0, 1)
-                    lcd.putstr(command_serial)
-
-                
-                if command_serial == "reset" or command_serial == "RESET": 
-                    reset_command = True
-                   
-
+                    lcd.putstr(data.decode('utf-8'))
                 
         if ButtonPageDn.value() == 0:
             if buttonPageDn_hold == False:
