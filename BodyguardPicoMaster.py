@@ -115,7 +115,7 @@ def bodyguard_master_receiver(s,):
             msg = msg_data.decode("utf-8")
             if msg == "":
                 break
-            if len(msg) <= 0:
+            elif len(msg) == 0:
                 break
             #temp = msg.split("/")
             print(msg)
@@ -127,6 +127,86 @@ def bodyguard_master_receiver(s,):
             print(f"after split message : {msg}")
             s.send(bytes(f"Master board confirmed: {msg} ","utf-8"))
             
+            # match msg:  # micropython doesn't support it
+            #     case "ALL ON":
+            #     case "all on":
+            #         Channel0.value(True)    #ON
+            #         state_dict['Channel0'] = 'ON'
+            #         Channel1.value(True)    #ON
+            #         state_dict['Channel1'] = 'ON'
+            #         Channel2.value(True)    #ON
+            #         state_dict['Channel2'] = 'ON'
+            #         Channel3.value(True)    #ON
+            #         state_dict['Channel3'] = 'ON'
+            #     case "ALL OFF":
+            #     case "all off":
+            #         Channel0.value(False)   #OFF
+            #         state_dict['Channel0'] = 'OFF'
+            #         Channel1.value(False)   #OFF
+            #         state_dict['Channel1'] = 'OFF'
+            #         Channel2.value(False)   #OFF
+            #         state_dict['Channel2'] = 'OFF'
+            #         Channel3.value(False)   #OFF
+            #         state_dict['Channel3'] = 'OFF'
+
+            #     case "CHANNEL0_ON":
+            #     case "channel0_on":
+            #         Channel0.value(True)    #ON
+            #         state_dict['Channel0'] = 'ON'
+                
+            #     case "CHANNEL1_ON":
+            #     case "channel1_on":
+            #         Channel1.value(True)    #ON
+            #         state_dict['Channel1'] = 'ON'
+
+            #     case "CHANNEL2_ON":
+            #     case "channel2_on":
+            #         Channel2.value(True)    #ON
+            #         state_dict['Channel2'] = 'ON'
+                
+            #     case "CHANNEL3_ON":
+            #     case "channel3_on":
+            #         Channel3.value(True)    #ON
+            #         state_dict['Channel3'] = 'ON'
+
+
+            #     case "CHANNEL0_OFF":
+            #     case "channel0_off":
+            #         Channel0.value(False)   #OFF
+            #         state_dict['Channel0'] = 'OFF'
+                
+            #     case "CHANNEL1_OFF":
+            #     case "channel1_off":
+            #         Channel1.value(False)   #OFF
+            #         state_dict['Channel1'] = 'OFF'
+                
+            #     case "CHANNEL2_OFF":
+            #     case "channel2_off":
+            #         Channel2.value(False)   #OFF
+            #         state_dict['Channel2'] = 'OFF'
+                
+            #     case "CHANNEL3_OFF":
+            #     case "channel3_off":
+            #         Channel3.value(False)   #OFF
+            #         state_dict['Channel3'] = 'OFF'
+
+            
+            #     case "POE RESET":
+            #     case "poe reset":
+            #         RelayPoe.value(True)
+            #         state_dict['Poe_Sw'] = 'OFF'
+            #         time.sleep(2)
+            #         RelayPoe.value(False)
+            #         state_dict['Poe_Sw'] = 'ON'
+
+            #     case "NUC RESET":
+            #     case "nuc reset":
+            #         RelayNuc.value(True)
+            #         state_dict['Computer'] = 'OFF'
+            #         time.sleep(2)
+            #         RelayNuc.value(False)
+            #         state_dict['Computer'] = 'ON'
+
             if msg == "ALL ON" or msg == "all on":
                 Channel0.value(True)    #ON
                 state_dict['Channel0'] = 'ON'
@@ -136,7 +216,7 @@ def bodyguard_master_receiver(s,):
                 state_dict['Channel2'] = 'ON'
                 Channel3.value(True)    #ON
                 state_dict['Channel3'] = 'ON'
-            if msg == "ALL OFF" or msg == "all off":
+            elif msg == "ALL OFF" or msg == "all off":
                 Channel0.value(False)   #OFF
                 state_dict['Channel0'] = 'OFF'
                 Channel1.value(False)   #OFF
@@ -146,39 +226,39 @@ def bodyguard_master_receiver(s,):
                 Channel3.value(False)   #OFF
                 state_dict['Channel3'] = 'OFF'
 
-            if msg == "CHANNEL0_ON" or msg == "channel0_on":
+            elif msg == "CHANNEL0_ON" or msg == "channel0_on":
                 Channel0.value(True)    #ON
                 state_dict['Channel0'] = 'ON'
-            if msg == "CHANNEL0_OFF"or msg == "channel0_off":
+            elif msg == "CHANNEL0_OFF"or msg == "channel0_off":
                 Channel0.value(False)   #OFF
                 state_dict['Channel0'] = 'OFF'
-            if msg == "CHANNEL1_ON" or msg == "channel1_on":
+            elif msg == "CHANNEL1_ON" or msg == "channel1_on":
                 Channel1.value(True)    #ON
                 state_dict['Channel1'] = 'ON'
-            if msg == "CHANNEL1_OFF"or msg == "channel1_off":
+            elif msg == "CHANNEL1_OFF"or msg == "channel1_off":
                 Channel1.value(False)   #OFF
                 state_dict['Channel1'] = 'OFF'
-            if msg == "CHANNEL2_ON" or msg == "channel2_on":
+            elif msg == "CHANNEL2_ON" or msg == "channel2_on":
                 Channel2.value(True)    #ON
                 state_dict['Channel2'] = 'ON'
-            if msg == "CHANNEL2_OFF"or msg == "channel2_off":
+            elif msg == "CHANNEL2_OFF"or msg == "channel2_off":
                 Channel2.value(False)   #OFF
                 state_dict['Channel2'] = 'OFF'
-            if msg == "CHANNEL3_ON" or msg == "channel3_on":
+            elif msg == "CHANNEL3_ON" or msg == "channel3_on":
                 Channel3.value(True)    #ON
                 state_dict['Channel3'] = 'ON'
-            if msg == "CHANNEL3_OFF"or msg == "channel3_off":
+            elif msg == "CHANNEL3_OFF"or msg == "channel3_off":
                 Channel3.value(False)   #OFF
                 state_dict['Channel3'] = 'OFF'
             
-            if msg == "POE RESET"or msg == "poe reset":
+            elif msg == "POE RESET"or msg == "poe reset":
                 RelayPoe.value(True)
                 state_dict['Poe_Sw'] = 'OFF'
                 time.sleep(2)
                 RelayPoe.value(False)
                 state_dict['Poe_Sw'] = 'ON'
 
-            if msg == "NUC RESET"or msg == "nuc reset":
+            elif msg == "NUC RESET"or msg == "nuc reset":
                 RelayNuc.value(True)
                 state_dict['Computer'] = 'OFF'
                 time.sleep(2)
@@ -186,13 +266,12 @@ def bodyguard_master_receiver(s,):
                 state_dict['Computer'] = 'ON'
 
     
-    
-            if msg == "reset" or msg == "RESET":
-                reset_command = True
-                while True:
-                    time.sleep(1)
-                    print("waiting for self reset by not feeding watchdog")
-                    s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
+            elif msg == "RESET"or msg == "reset":
+                    reset_command = True
+                    while True:
+                        time.sleep(1)
+                        print("waiting for self reset by not feeding watchdog")
+                        s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
                 
             #full_msg += msg1.decode("utf-8")
             #print(full_msg)
@@ -321,8 +400,8 @@ def main():
                 Channel3.value(True)    #ON
                 state_dict['Channel3'] = 'ON'
                 
-                s.send(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
-                uart.write(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
+                s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
+                uart.write(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
 
                 print(f"Photoeye:{state_dict['Photoeye']}")    
 
@@ -333,9 +412,7 @@ def main():
                         lcd.move_to(0, 1)
                         lcd.putstr(f"Photoeye:{state_dict['Photoeye']}")
 
-                time_update_time = time.time()
-                
-                
+                time_update_time = time.time()      
         else:
             if  state_dict['Photoeye'] == 'ON':
                 time.sleep(0.2) #Anti disruption
@@ -351,8 +428,8 @@ def main():
                     Channel3.value(False)   #OFF
                     state_dict['Channel3'] = 'OFF'
                 
-                    s.send(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
-                    uart.write(bytes(f"/Photoeye:{state_dict['Photoeye']}","utf-8"))
+                    s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
+                    uart.write(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
                     
                     print(f"Photoeye:{state_dict['Photoeye']}")
                     if (lcd_exist == True):
