@@ -417,3 +417,386 @@ for each in str1:
 # 在Python3中，所有的字符串都是Unicode字符串。
 
 # Python 的字符串内建函数 https://www.runoob.com/python3/python3-string.html
+
+# 如果是I/O 密集型，且I/O 请求比较耗时的话，使用协程。 
+# 如果是I/O 密集型，且I/O 请求比较快的话，使用多线程。 
+# 如果是计算密集型，考虑可以使用多核CPU，使用多进程
+
+# aList = [123, 'xyz', 'runoob', 'abc']
+
+# print "xyz 索引位置: ", aList.index( 'xyz' )
+# print "runoob 索引位置 : ", aList.index( 'runoob', 1, 3 )
+# 以上实例输出结果如下：
+
+# xyz 索引位置:  1
+# runoob 索引位置 :  2
+
+# 通过 values 取到 key 的方法：
+
+# >>> dic={"a":1,"b":2,"c":3}
+# >>> list(dic.keys())[list(dic.values()).index(1)]
+# 'a'
+
+# 如果 if 语句中的条件过长，可以用接续符 \ 来换行。
+
+# 例如：
+
+# if 2>1 and 3>2 and 4>3 and \
+#     5>4 and 6>5 and 7>6 and \
+#     8>7:
+#     print("OK")
+# 注意: \ 后的一行要缩进没有要求，可无序缩进，但我们保持代码的可读性一般设置同样的缩进格式。
+
+# 上一篇总结os模块，该模块与 sys 模块从名称上看着好像有点类似，实际上关系不大，
+# os 模块主要负责与操作系统进行交互，而这个两个模块常常搭配起来使用， 能实现许多需求。
+# sys 模块主要负责与 Python 解释器进行交互，提供了一系列用于控制 Python 运行环境的函数和变量。
+# 本文为常用的sys模块用法总结
+# 1、sys.argv: 实现从程序外部向程序传递参数。
+
+# 2、sys.exit([arg]): 程序中间的退出，arg=0为正常退出。
+
+# 3、sys.getdefaultencoding(): 获取系统当前编码，一般默认为ascii。
+
+# 4、sys.setdefaultencoding(): 设置系统默认编码，执行dir（sys）时不会看到这个方法，在解释器中执行不通过，可以先执行reload(sys)，在执行 setdefaultencoding('utf8')，此时将系统默认编码设置为utf8。（见设置系统默认编码 ）
+
+# 5、sys.getfilesystemencoding(): 获取文件系统使用编码方式，Windows下返回'mbcs'，mac下返回'utf-8'.
+
+# 6、sys.path: 获取指定模块搜索路径的字符串集合，可以将写好的模块放在得到的某个路径下，就可以在程序中import时正确找到。
+
+# 7、sys.platform: 获取当前系统平台。
+
+# 8、sys.modules：是一个全局字典，该字典是python启动后就加载在内存中。每当程序员导入新的模块，sys.modules将自动记录该模块。当第二次再导入该模块时，python会直接到字典中查找，从而加快了程序运行的速度。它拥有字典所拥有的一切方法。
+
+# 9、sys.stdin,sys.stdout,sys.stderr: stdin , stdout , 以及stderr 变量包含与标准I/O 流对应的流对象. 如果需要更好地控制输出,而print 不能满足你的要求, 它们就是你所需要的. 你也可以替换它们, 这时候你就可以重定向输出和输入到其它设备( device ), 或者以非标准的方式处理它们
+
+
+# 里面有个 sys.path属性。他是一个list.默然情况下python导入文件或者模块的话，他会先在sys.path里找模块的路径。如果没有的话，
+
+# 程序就会报错。
+
+# 所以我们一般自己写程序的话。最好把自己的模块路径给加到当前模块扫描的路径里,eg: sys.path.append('你的模块的名称'),这样程序就不会
+
+# 因为找不到模块而报错。。
+
+# 当你导入一个模块，Python 解析器对模块位置的搜索顺序是
+
+# 当前目录
+# 如果在当前目录没有找到，Python 则搜索在 shell 变量 PYTHONPATH 下的每个目录
+# 如果都找不到，Python会查看默认路径。UNIX下，默认路径一般为/usr/local/lib/python/
+# 模块搜索路径存储在 system 模块的 sys.path 变量中。变量里包含当前目录，PYTHONPATH和由安装过程决定的默认目录。
+
+# 'C:\\Users\\Jasper\\AppData\\Local\\Programs\\Python\\Python311\\Lib
+# C:\Users\Jasper\AppData\Local\Programs\Python\Python311\
+# 当导入模块时系统会自动按顺序从这些路径搜索一遍看看是否存在，如果用户想导入自己的写的模块也可以操作的。
+# 可以发现这个是一个列表，所以支持列表操作，如果想导入当前目录下的模块，可以使用列表增加元素的操作
+
+# sys.path.append('path')
+# path是你要导入的路径
+# 例如我导入/Documents/practice
+
+# In [8]: sys.path.append('/Documents/practice')
+ 
+# In [9]: sys.path
+# Out[9]: 
+# ['',
+#  '/usr/bin',
+#  '/usr/local/lib/python3.5/dist-packages/pygame-1.9.4.dev0-py3.5-linux-x86_64.egg',
+#  '/usr/lib/python35.zip',
+#  '/usr/lib/python3.5',
+#  '/usr/lib/python3.5/plat-x86_64-linux-gnu',
+#  '/usr/lib/python3.5/lib-dynload',
+#  '/home/am/.local/lib/python3.5/site-packages',
+#  '/usr/local/lib/python3.5/dist-packages',
+#  '/usr/lib/python3/dist-packages',
+#  '/usr/lib/python3/dist-packages/IPython/extensions',
+#  '/home/am/.ipython',
+#  '/Documents/practice']
+
+# 3、环境变量的作用
+# 刚才说过，1、随着电脑安装的软件越来越多，我们记不住所有软件的安装路径，想运行某一软件就很麻烦
+# 。2、如果想在某一路径下直接运行某款软件，我们无能为力。
+
+# 通过在环境变量里面加入所有软件的安装路径，当我们想运行某一软件时双击其快捷方式或者在DOS界面输入软件名称，
+# 此时，计算机除了在其当前目录下寻找该软件的.exe文件外，还在环境变量中搜索软件的路径，找到，运行。
+
+# 综上，Windows和DOS操作系统中的path环境变量，当要求系统运行一个程序而没有告诉它程序所在的完整路径时，
+# 系统除了在当前目录下面寻找此程序外，还应到path中指定的路径去找。用户通过设置环境变量，来更好的运行进程。
+
+# 1. 获取命令行参数
+# sys.argv 是一个包含命令行参数的列表，其中第一个元素是脚本的名称。
+
+# import sys
+
+# # 示例脚本名为 example.py
+# print("Script Name:", sys.argv[0])
+
+# # 打印所有命令行参数
+# print("Command Line Arguments:", sys.argv[1:])
+# 2. 修改默认编码
+# sys 模块允许修改默认的字符串编码，这对于处理不同编码的数据非常有用。
+
+# import sys
+
+# # 查看默认编码
+# print("Default Encoding:", sys.getdefaultencoding())
+
+# # 修改默认编码为UTF-8
+# sys.setdefaultencoding("utf-8")
+
+# 再次查看默认编码
+# print("Updated Encoding:", sys.getdefaultencoding())
+# 3. 强制退出程序
+# 通过 sys.exit() 可以在程序中任意位置强制退出，可传入整数参数作为退出状态码。
+
+# import sys
+
+# def example_function():
+#     print("Function is running.")
+#     sys.exit(1)
+
+# example_function()
+# print("This line will not be executed.")
+# 4. 获取Python解释器版本信息
+# sys.version 提供了当前 Python 解释器的版本信息。
+
+# import sys
+
+# print("Python Version:", sys.version)
+# 5. 改变模块搜索路径
+# sys.path 包含了一个列表，其中存储了 Python 解释器用来查找模块的路径。
+
+# import sys
+
+# # 打印当前模块搜索路径
+# print("Current Path:", sys.path)
+
+# # 添加新的路径
+# sys.path.append("/path/to/new/module")
+# print("Updated Path:", sys.path)
+# 6. 重定向标准输入输出流
+# 通过 sys.stdin、sys.stdout 和 sys.stderr 可以重定向标准输入、标准输出和标准错误流。
+
+# import sys
+
+# # 保存原始的标准输出流
+# original_stdout = sys.stdout
+
+# # 重定向标准输出到文件
+# with open("output.txt", "w") as f:
+#     sys.stdout = f
+#     print("This will be written to output.txt")
+
+# # 恢复原始的标准输出流
+# sys.stdout = original_stdout
+# print("This will be printed to the console.")
+# 7. 获取系统相关信息
+# sys 模块提供了一些关于系统的基本信息，如平台、版本等。
+
+# import sys
+
+# print("Platform:", sys.platform)
+# print("Version:", sys.version_info)
+# 8. 获取当前模块
+# sys.modules 是一个字典，包含了当前载入的所有模块。
+
+# import sys
+
+# # 获取当前模块的信息
+# current_module = sys.modules[__name__]
+# print("Current Module:", current_module)
+# 9. 自定义异常处理
+# 通过 sys.exc_info() 可以获取当前异常信息，用于自定义异常处理。
+
+# import sys
+
+# try:
+#     x = 1 / 0
+# except ZeroDivisionError:
+#     exc_type, exc_value, exc_traceback = sys.exc_info()
+#     print(f"Exception Type: {exc_type}")
+#     print(f"Exception Value: {exc_value}")
+#     print(f"Exception Traceback: {exc_traceback}")
+# 10. 清理资源
+# sys 模块中的 sys.exitfunc 是一个函数列表，用于在解释器退出之前执行清理操作。
+
+# import sys
+
+# def cleanup_function():
+#     print("Cleaning up resources.")
+
+# # 将清理函数添加到 exitfunc 列表
+# sys.exitfunc = cleanup_function
+
+# # 退出程序时会调用清理函数
+# sys.exit(0)
+
+
+0、__init__.py
+# 在Python工程里，当python检测到一个目录下存在__init__.py文件时，python就会把它当成一个模块(module)。
+# Module跟C＋＋的命名空间和Java的Package的概念很像，都是为了科学地组织化工程，管理命名空间
+#
+# @file __init__.py
+#
+
+# import arithmetic.add
+# import arithmetic.sub
+# import arithmetic.mul
+# import arithmetic.dev
+
+# add = arithmetic.add.add
+# sub = arithmetic.sub.sub
+# mul = arithmetic.mul.mul
+# dev = arithmetic.dev.dev
+# 在__init__.py中， 我们import了arithmetic下的所有子模块，
+# 并在__init__.py中给各个子模块的核心功能取了新的名字，作为arithmetic模块的变量。
+# 所以我们在main.py中import了arithmetic模块之后，就可以直接进行使用了。
+# 如果你使用from arithmetic import * 语句，那么我们就可以使用add、sub、mul、dev，连a4都省了
+
+# Python两种输出值的方式: 表达式语句和 print() 函数。
+
+# 第三种方式是使用文件对象的 write() 方法，标准输出文件可以用 sys.stdout 引用。
+
+
+# 语法错误
+# 这个例子中，函数 print() 被检查到有错误，是它前面缺少了一个冒号 : 。
+
+# 语法分析器指出了出错的一行，并且在最先找到的错误的位置标记了一个小小的箭头。
+# 异常
+# 即便 Python 程序的语法是正确的，在运行它的时候，也有可能发生错误。运行期检测到的错误被称为异常。
+
+# 大多数的异常都不会被程序处理，都以错误信息的形式展现在这里:
+
+
+类的方法与普通的函数只有一个特别的区别——它们必须有一个额外的第一个参数名称, 按照惯例它的名称是 self。
+
+class Test:
+    def prt(self):
+        print(self)
+        print(self.__class__)
+ 
+t = Test()
+t.prt()
+以上实例执行结果为：
+
+<__main__.Test instance at 0x100771878>
+__main__.Test
+从执行结果可以很明显的看出，self 代表的是类的实例，代表当前对象的地址，而 self.class 则指向类。
+
+# self 不是 python 关键字，我们把他换成 runoob 也是可以正常执行的:
+
+# class Test:
+#     def prt(runoob):
+#         print(runoob)
+#         print(runoob.__class__)
+ 
+# t = Test()
+# t.prt()
+# 以上实例执行结果为：
+
+# <__main__.Test instance at 0x100771878>
+# __main__.Test
+
+# 在 Python中，self 是一个惯用的名称，用于表示类的实例（对象）自身。它是一个指向实例的引用，使得类的方法能够访问和操作实例的属性。
+
+# 当你定义一个类，并在类中定义方法时，第一个参数通常被命名为 self，尽管你可以使用其他名称，但强烈建议使用 self，以保持代码的一致性和可读性。
+
+# 实例
+
+#!/usr/bin/python3
+ 
+#类定义
+# class people:
+#     #定义基本属性
+#     name = ''
+#     age = 0
+#     #定义私有属性,私有属性在类外部无法直接进行访问
+#     __weight = 0
+#     #定义构造方法
+#     def __init__(self,n,a,w):
+#         self.name = n
+#         self.age = a
+#         self.__weight = w
+#     def speak(self):
+#         print("%s 说: 我 %d 岁。" %(self.name,self.age))
+ 
+# # 实例化类
+# p = people('runoob',10,30)
+# p.speak()
+
+最新的 Python3.7 中(2018.07.13)，对类的构造函数进行了精简。
+
+# 3.7 版本：
+
+# from dataclasses import dataclass
+# @dataclass
+# class A:
+#   x:int
+#   y:int
+#   def add(self):
+#     return self.x + self.y
+# 相当于以前的：
+
+# class A:
+#   def __init__(self,x,y):
+#     self.x = x
+#     self.y = y
+#   def add(self):
+#     return self.x + self.y
+
+
+# Python3 标准库概览
+# Python 标准库非常庞大，所提供的组件涉及范围十分广泛，使用标准库我们可以让您轻松地完成各种任务。
+
+# 以下是一些 Python3 标准库中的模块：
+
+# os 模块：os 模块提供了许多与操作系统交互的函数，例如创建、移动和删除文件和目录，以及访问环境变量等。
+
+# sys 模块：sys 模块提供了与 Python 解释器和系统相关的功能，例如解释器的版本和路径，以及与 stdin、stdout 和 stderr 相关的信息。
+
+# time 模块：time 模块提供了处理时间的函数，例如获取当前时间、格式化日期和时间、计时等。
+
+# datetime 模块：datetime 模块提供了更高级的日期和时间处理函数，例如处理时区、计算时间差、计算日期差等。
+
+# random 模块：random 模块提供了生成随机数的函数，例如生成随机整数、浮点数、序列等。
+
+# math 模块：math 模块提供了数学函数，例如三角函数、对数函数、指数函数、常数等。
+
+# re 模块：re 模块提供了正则表达式处理函数，可以用于文本搜索、替换、分割等。
+
+# json 模块：json 模块提供了 JSON 编码和解码函数，可以将 Python 对象转换为 JSON 格式，并从 JSON 格式中解析出 Python 对象。
+
+# urllib 模块：urllib 模块提供了访问网页和处理 URL 的功能，包括下载文件、发送 POST 请求、处理 cookies 等。
+
+# import os
+
+# # 获取当前工作目录
+# current_dir = os.getcwd()
+# print("当前工作目录:", current_dir)
+
+# # 列出目录下的文件
+# files = os.listdir(current_dir)
+# print("目录下的文件:", files)
+
+# 所有的数据类型，值，变量，函数，类，实例等等一切可操作的基本单元在 Python 都使用对象（Object）表示。每个对象有三个基本属性：ID，类型和值，也即有一块内存中存储了一个对象，这块内存中一定存有这三个属性。
+
+# a = 1
+# print(id(a), type(a), a)
+# print(id(int), type(int), int)
+# print(id(type), type(type), type)
+
+# >>>
+# 1384836208 <class 'int'> 1
+# 1837755504 <class 'int'> 1
+# 1837581680 <class 'type'> <class 'int'>
+# 1837610960 <class 'type'> <class 'type'>
+
+
+# def test_args(*args, **kwargs):
+#     print(args)
+#     print(kwargs)
+
+# test_args(1, 2, {"key0": "val0"}, name="name", age=18)
+
+# >>>
+# (1, 2, {'key0': 'val0'})
+# {'name': 'name', 'age': 18}

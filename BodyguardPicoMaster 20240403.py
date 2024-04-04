@@ -10,7 +10,7 @@ import network
 import time
 import _thread
 TERMINATION_CHAR = '\n'
-SERIAL_TERMINATION_CHAR = '\r'
+#TERMINATION_CHAR = '/'
 
 #Command /ALL_ON
 #Command /ALL_OFF
@@ -77,7 +77,7 @@ lcd_exist = False
 #Data_Key = _thread.allocate_lock()  # create a semaphore locking mechanism
 #Data_Key.acquire()   
 #Data_Key.release()
-time_NUC_alive = time.time()
+
 # Bodyguard tower DHCP configuration
 def w5100_init():
     spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
@@ -107,7 +107,7 @@ def bodyguard_client():
             s.send(bytes(f"bodyguard tower received {full_msg} ","utf-8"))
             
 def bodyguard_master_receiver(s,):
-    global thread_receiver_alive_flag,state_dict,reset_command,time_NUC_alive
+    global thread_receiver_alive_flag,state_dict,reset_command
     full_msg = ''
     while True:
         try:
@@ -127,6 +127,86 @@ def bodyguard_master_receiver(s,):
             print(f"after split message : {msg}")
             s.send(bytes(f"Master board confirmed: {msg} ","utf-8"))
             
+            # match msg:  # micropython doesn't support it
+            #     case "ALL ON":
+            #     case "all on":
+            #         Channel0.value(True)    #ON
+            #         state_dict['Channel0'] = 'ON'
+            #         Channel1.value(True)    #ON
+            #         state_dict['Channel1'] = 'ON'
+            #         Channel2.value(True)    #ON
+            #         state_dict['Channel2'] = 'ON'
+            #         Channel3.value(True)    #ON
+            #         state_dict['Channel3'] = 'ON'
+            #     case "ALL OFF":
+            #     case "all off":
+            #         Channel0.value(False)   #OFF
+            #         state_dict['Channel0'] = 'OFF'
+            #         Channel1.value(False)   #OFF
+            #         state_dict['Channel1'] = 'OFF'
+            #         Channel2.value(False)   #OFF
+            #         state_dict['Channel2'] = 'OFF'
+            #         Channel3.value(False)   #OFF
+            #         state_dict['Channel3'] = 'OFF'
+
+            #     case "CHANNEL0_ON":
+            #     case "channel0_on":
+            #         Channel0.value(True)    #ON
+            #         state_dict['Channel0'] = 'ON'
+                
+            #     case "CHANNEL1_ON":
+            #     case "channel1_on":
+            #         Channel1.value(True)    #ON
+            #         state_dict['Channel1'] = 'ON'
+
+            #     case "CHANNEL2_ON":
+            #     case "channel2_on":
+            #         Channel2.value(True)    #ON
+            #         state_dict['Channel2'] = 'ON'
+                
+            #     case "CHANNEL3_ON":
+            #     case "channel3_on":
+            #         Channel3.value(True)    #ON
+            #         state_dict['Channel3'] = 'ON'
+
+
+            #     case "CHANNEL0_OFF":
+            #     case "channel0_off":
+            #         Channel0.value(False)   #OFF
+            #         state_dict['Channel0'] = 'OFF'
+                
+            #     case "CHANNEL1_OFF":
+            #     case "channel1_off":
+            #         Channel1.value(False)   #OFF
+            #         state_dict['Channel1'] = 'OFF'
+                
+            #     case "CHANNEL2_OFF":
+            #     case "channel2_off":
+            #         Channel2.value(False)   #OFF
+            #         state_dict['Channel2'] = 'OFF'
+                
+            #     case "CHANNEL3_OFF":
+            #     case "channel3_off":
+            #         Channel3.value(False)   #OFF
+            #         state_dict['Channel3'] = 'OFF'
+
+            
+            #     case "POE RESET":
+            #     case "poe reset":
+            #         RelayPoe.value(True)
+            #         state_dict['Poe_Sw'] = 'OFF'
+            #         time.sleep(2)
+            #         RelayPoe.value(False)
+            #         state_dict['Poe_Sw'] = 'ON'
+
+            #     case "NUC RESET":
+            #     case "nuc reset":
+            #         RelayNuc.value(True)
+            #         state_dict['Computer'] = 'OFF'
+            #         time.sleep(2)
+            #         RelayNuc.value(False)
+            #         state_dict['Computer'] = 'ON'
+
             if msg == "ALL ON" or msg == "all on":
                 Channel0.value(True)    #ON
                 state_dict['Channel0'] = 'ON'
@@ -184,6 +264,7 @@ def bodyguard_master_receiver(s,):
                 time.sleep(2)
                 RelayNuc.value(False)
                 state_dict['Computer'] = 'ON'
+
     
             elif msg == "RESET"or msg == "reset":
                     reset_command = True
@@ -191,32 +272,31 @@ def bodyguard_master_receiver(s,):
                         time.sleep(1)
                         print("waiting for self reset by not feeding watchdog")
                         s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
+                
+            #full_msg += msg1.decode("utf-8")
+            #print(full_msg)
             
-            elif msg == "ALIVE"or msg == "alive":
-                    time_NUC_alive = time.time()
-                    print(f"recevied {msg} at {time_NUC_alive}")
-
-
-              
-        except:
+           
+        except OSError:
             print("Bodyguard server disconnected,recever thread exit")
             thread_receiver_alive_flag = True
             exit()
             
-
-def lcd_flash(lcd_exist,lcd,firstLine,sencondLine):
-        if len(firstLine) == 0:
-            firstLine = "Bodyguard Master"
+            
+#def callback(p):
+#   print('pin change', p)
+def lcd_flash(firstLine, sencondLine):
+        global lce_exist
         if (lcd_exist == True):
             lcd.clear()
             lcd.move_to(0, 0)
-            lcd.putstr(firstLine)
+            lcd.putstr("Bodyguard Master")
             lcd.move_to(0, 1)
-            lcd.putstr(sencondLine)
+            lcd.putstr("Running...")
 
 def main():
     
-    global thread_receiver_alive_flag, state_dict,reset_command,lcd_exist,time_NUC_alive
+    global thread_receiver_alive_flag, state_dict,reset_command,lce_exist
 
     Channel0.value(False)
     Channel1.value(False)
@@ -235,9 +315,12 @@ def main():
         if devices != []:
             lcd_exist = True
             lcd = I2CLcd(i2c, devices[0], 2, 16)
-            lcdFirstLine = "Bodyguard Master"
-            lcdSecondLine = "Initialization.."
-            lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+            lcd.move_to(0, 0)
+            lcd.putstr("Bodyguard Master")
+            lcd.move_to(0, 1)
+            lcd.putstr("Initialization..")
+            count = 0
+            lcd_exist = True
         else:
             lcd_exist = False
             print("No address found")
@@ -260,59 +343,18 @@ def main():
     
     #UART Initialaztion
     uart = UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
-    uart.init(bits=8, parity=None, stop=1)
+    uart.init(bits=8, parity=None, stop=2)
 
     uart.write(bytes('Bodyguard Pico start...',"utf-8"))
     
     #Ethernet initialization
-    #w5100_init()
-
-    spi=SPI(0,2_000_000, mosi=Pin(19),miso=Pin(16),sck=Pin(18))
-    nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
-    nic.active(True)
-#None DHCP
-    #nic.ifconfig(('192.168.11.15','255.255.255.0','192.168.11.1','8.8.8.8'))
-#DHCP
-
-    con_flag = True
-    while (con_flag):
-        try:
-            nic.ifconfig('dhcp')
-            print(nic)
-            con_flag = False
-        except:
-            time.sleep(1)
-            lcdSecondLine = "waiting DHCP"
-            print("waiting DHCP")
-            lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
-      
-    print('IP address :', nic.ifconfig())
-    while not nic.isconnected():
-        time.sleep(1)
-        print(nic.regs())
+    w5100_init()
 
     #Socket initialization
-    #s = socket.socket()
-    #print(s)
-    count_connection = 0
-    con_flag = True
-    while (con_flag):
-        try:
-            count_connection += 1
-            print(count_connection)
-            
-            s = socket.socket()
-            s.connect((server_IP, portnumber))#10001
-            print(s)
-            con_flag = False
-        except:
-            time.sleep(1)
-            lcdSecondLine = "waiting for IP"
-            print("waiting for IP")
-            lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
-        
+    s = socket.socket()
+    s.connect((server_IP, portnumber))#10001
     print("Connection established...")
-    time_NUC_alive = time.time() #computer app started
+    
     #Thread for Receiving message from computer
     _thread.start_new_thread(bodyguard_master_receiver,(s,))
     
@@ -329,14 +371,18 @@ def main():
     state_dict['Photoeye'] = 'OFF'
     time_upper_update_time = time.time()
     upper_unsend = True
+
     buttonPageDn_hold = False
     page = 0
     max_page = 7
     page_reading_mode = False
-
-    lcdSecondLine   = "Running..."
-    lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
-
+    
+    if (lcd_exist == True):
+        lcd.clear()
+        lcd.move_to(0, 0)
+        lcd.putstr("Bodyguard Master")
+        lcd.move_to(0, 1)
+        lcd.putstr("Running...")
     wdt.feed()
     
     while True:
@@ -367,8 +413,13 @@ def main():
 
                 print(f"Photoeye:{state_dict['Photoeye']}")    
 
-                lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                if (lcd_exist == True):
+                        lcd.clear()
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Bodyguard Master")
+                        lcd.move_to(0, 1)
+                        lcd.putstr(f"Photoeye:{state_dict['Photoeye']}")
+
                 time_update_time = time.time()      
         else:
             if  state_dict['Photoeye'] == 'ON':
@@ -389,24 +440,18 @@ def main():
                     uart.write(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
                     
                     print(f"Photoeye:{state_dict['Photoeye']}")
-
-                    lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                    lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                    if (lcd_exist == True):
+                        lcd.clear()
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Bodyguard Master")
+                        lcd.move_to(0, 1)
+                        lcd.putstr(f"Photoeye:{state_dict['Photoeye']}")
       
         if thread_receiver_alive_flag == True:
             print("main thread exit....")
-            #while True:
-                #print("Network disconnected")
-                #time.sleep(1)
             exit()
 
-        if (time.time() - time_NUC_alive) >= 20:
-            print(time.time())
-            print(time_NUC_alive)
-            while True:
-                    print("NUC restart")
-                    time.sleep(1)
-
+        
             
         if time.time()- time0 >= 2: #Auto report status to computer every 2 seconds
             time0 = time.time() 
@@ -426,8 +471,13 @@ def main():
             uart.write(bytes(f"{state_dict.items()} ","utf-8"))
             #print("tower is alive...")
             if page_reading_mode == False:
-                lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                if (lcd_exist == True):
+                    count += 1
+                    lcd.clear()
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Bodyguard Master")
+                    lcd.move_to(0, 1)
+                    lcd.putstr(f"Photoeye:{state_dict['Photoeye']}")
             else:
                 if time.time() - readingTime >= 3:
                     page_reading_mode = False
@@ -435,21 +485,21 @@ def main():
                     
             
             if uart.any(): 
-                data1 = uart.read()
-                uart.write(f"uart receiced {data1}")
-                try:
-                    command_serial = data1.decode('utf-8')
-                    temp1 = command_serial.split(TERMINATION_CHAR)
-                    print(temp1)              
-                    command_serial = temp1[-2]
-                except:
-                    pass
+                data = uart.read()
+                uart.write(f"uart receiced {data}")
+                command_serial = data.decode('utf-8')
+                if (lcd_exist == True):
+                    lcd.clear()
+                    lcd.move_to(0, 0)
+                    lcd.putstr("Serial Received")
+                    lcd.move_to(0, 1)
+                    lcd.putstr(command_serial)
 
-                lcdSecondLine   =  command_serial
-                lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
-
+                
                 if command_serial == "reset" or command_serial == "RESET": 
                     reset_command = True
+                   
+
                 
         if ButtonPageDn.value() == 0:
             if buttonPageDn_hold == False:
@@ -470,9 +520,13 @@ def main():
                     str2 = state_dict.get(temppage)
                     str1 = temppage + ":" + str2 
                     print(str1)
-
-                    lcdSecondLine   =  str1
-                    lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                    
+                    if (lcd_exist == True):
+                        lcd.clear()
+                        lcd.move_to(0, 0)
+                        lcd.putstr("Bodyguard Master")
+                        lcd.move_to(0, 1)
+                        lcd.putstr(str1)
         else:
             if buttonPageDn_hold == True:
                 time.sleep(0.01)
