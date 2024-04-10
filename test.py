@@ -800,3 +800,65 @@ __main__.Test
 # >>>
 # (1, 2, {'key0': 'val0'})
 # {'name': 'name', 'age': 18}
+
+
+#!/usr/bin/python
+# -*- coding: UTF-8 -*-
+
+# import os, sys
+
+# # 列出目录
+# print "目录为: %s"%os.listdir(os.getcwd())
+
+# # 重命名
+# os.rename("test","test2")
+
+# print "重命名成功。"
+
+# # 列出重命名后的目录
+# print "目录为: %s" %os.listdir(os.getcwd())
+
+# 目录为:
+# [  'a1.txt','resume.doc','a3.py','test' ]
+# 重命名成功。
+# [  'a1.txt','resume.doc','a3.py','test2' ]
+
+# PICO 库文件 阅读
+# http://www.86x.org/en/latet/library/index.html#
+
+# array – 数值数据数组
+# binascii – 二进制/ASCII 转换
+# builtins – 内置函数和异常
+# cmath – 复数的数学函数
+# collections – 集合和容器类型
+# errno – 系统错误代码
+# gc – 控制垃圾收集器
+# hashlib – 散列算法
+# heapq – 堆队列算法
+# io – 输入/输出流
+# json – JSON 编码和解码
+# math – 数学函数
+# os – 基本的“操作系统”服务
+# re – 简单的正则表达式
+# select – 等待一组流上的事件
+# socket – 插座模块
+# ssl – SSL/TLS 模块
+# struct – 打包和解包原始数据类型
+# sys – 系统特定功能
+# time – 时间相关功能
+# uasyncio — 异步 I/O 调度器
+# zlib – zlib 解压
+# _thread – 多线程支持
+
+# MicroPython 特定的库
+# 以下库中提供了特定于 MicroPython 实现的功能。
+
+# bluetooth — 低级蓝牙
+# btree – 简单的 BTree 数据库
+# cryptolib – 密码密码
+# framebuf —帧缓冲区操作
+# machine — 与硬件相关的功能
+# micropython – 访问和控制 MicroPython 内部结构
+# neopixel — WS2812 / NeoPixel LED 的控制
+# network — 网络配置
+# uctypes – 以结构化的方式访问二进制数据
