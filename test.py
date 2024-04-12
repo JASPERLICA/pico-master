@@ -862,3 +862,43 @@ __main__.Test
 # neopixel — WS2812 / NeoPixel LED 的控制
 # network — 网络配置
 # uctypes – 以结构化的方式访问二进制数据
+
+# watchdog.h File Reference
+# #include "pico.h"
+# #include "hardware/structs/watchdog.h"
+# Go to the source code of this file.
+
+# Functions
+# void watchdog_reboot (uint32_t pc, uint32_t sp, uint32_t delay_ms)
+
+#  Define actions to perform at watchdog timeout.
+
+# void watchdog_start_tick (uint cycles)
+
+#  Start the watchdog tick.
+
+# void watchdog_update (void)
+
+#  Reload the watchdog counter with the amount of time set in watchdog_enable.
+
+# void watchdog_enable (uint32_t delay_ms, bool pause_on_debug)
+
+#  Enable the watchdog.
+
+# bool watchdog_caused_reboot (void)
+
+#  Did the watchdog cause the last reboot?
+
+# bool watchdog_enable_caused_reboot (void)
+
+#  Did watchdog_enable cause the last reboot?
+
+# uint32_t watchdog_get_count (void)
+
+#  Returns the number of microseconds before the watchdog will reboot the chip.
+
+# 我们应尽量不用全局变量，比如当一个模块中的两个函数要用同一个变量时，我们可以尝试把这两个函数写在一个类中，而该变量定义
+
+# 成类变量。如果非要用全局变量，建议把它们全部定义在一个类中，通过“类名.类变量名”来使用它们，这样OK了，根本不用什么globle
+
+# 关键字了。
