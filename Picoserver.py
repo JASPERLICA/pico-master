@@ -90,17 +90,22 @@ def web_message_handle(web_socket):
             return
         print(f"[Received from web data]-->>{data}-->> {threading.current_thread().ident}")
 
-        temp = data.split()
-        msg = temp[-1]
+        # temp = data.split()
+        # msg = temp[-1]
+        
+        # temp = data.split(TERMINATION_CHAR)
+        # print(temp)
+        # msg = temp[-2]
         
         G.lock_web_message.acquire()
         G.message_receiced_from_web = True
-        if msg == "Photoeye:ON":
-            G.message_from_web = "Photoeye:ON"
-            pass
-        if msg == "Photoeye:OFF":
-            G.message_from_web = "Photoeye:OFF"
-            pass
+        G.message_from_web = data
+        # if msg == "all on":
+        #     G.message_from_web = msg
+        #     pass
+        # if msg == "all off":
+        #     G.message_from_web = "Photoeye:OFF"
+        #     pass
         G.lock_web_message.release()
 
         
@@ -169,19 +174,26 @@ if __name__ == '__main__':
                 G.time_alive  = time.time()
                 if len(G.master_pool):
                     master_socket = G.master_pool[0]
-                    master_socket.send(ALIVE_FLAG.encode())
-                    print("ALIVE EVERY 4 SECOND")
+                    try :
+                        master_socket.send(ALIVE_FLAG.encode())
+                        print("ALIVE EVERY 4 SECOND")
+                    except ConnectionResetError as error:
+                        print(f"it is disconneted {error}")
             
             if G.message_receiced_from_web == True:
                 G.lock_web_message.acquire()            
                 G.message_receiced_from_web = False
-                buff_for_web = G.message_from_web
+                G.buff_for_web = G.message_from_web
+                print(f"the buff is {G.buff_for_web}")
                 G.lock_web_message.release()
 
-                buff_for_web = buff_for_web + TERMINATION_CHAR
+                G.buff_for_web = G.buff_for_web + TERMINATION_CHAR
+                # G.buff_for_web = G.buff_for_web
+                print(f"the buff is {G.buff_for_web}")
                 if len(G.master_pool):
                     master_socket = G.master_pool[0]
-                    master_socket.send(buff_for_web.encode())
+                    master_socket.send(G.buff_for_web.encode())
+                    print(f"sent the{G.buff_for_web} to master")
         except KeyboardInterrupt:
             print("you just pressed control + C, and it exited")
             exit()
