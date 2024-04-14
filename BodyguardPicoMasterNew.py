@@ -14,12 +14,13 @@ import _thread
 
 TERMINATION_CHAR            = '\n'
 SERIAL_TERMINATION_CHAR     = '\r'
-NUC_IP = "192.168.20.155"   #server running on my Japer li pc
+# NUC_IP = "192.168.20.155"   #server running on my Japer li pc
+NUC_IP = "192.168.0.102"   #server running on my Japer li pc at home network
 PORT_NUMBER = 10001
 
 WATCHDOG_PERIOD             = 4000 #was 2800
-thread_receiver_alive_flag  = False
-reset_command               = False
+receiver_disconnected_flag  = False
+reset_command_flag          = False
 lcd_exist                   = False
 time_NUC_alive              = time.time()
 
@@ -89,10 +90,11 @@ RelayPoe.value(False)
       
             
 def bodyguard_master_receiver(s,):
-    global thread_receiver_alive_flag,state_dict,reset_command,time_NUC_alive
+    global receiver_disconnected_flag,state_dict,reset_command_flag,time_NUC_alive
     full_msg = ''
     while True:
         try:
+            # No.A waiting for message from NUC
             msg_data = s.recv(128)
             msg = msg_data.decode("utf-8")
             if msg == " ":
@@ -107,8 +109,9 @@ def bodyguard_master_receiver(s,):
             msg = temp[-2]
             
             print(f"after split message : {msg}")
-            s.send(bytes(f"Master board confirmed: {msg} ","utf-8"))
+            s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
             
+            # No.B command handle
             if msg == "ALL ON" or msg == "all on":
                 Channel0.value(True)    #ON
                 state_dict['Channel0'] = 'ON'
@@ -168,11 +171,11 @@ def bodyguard_master_receiver(s,):
                 state_dict['Computer'] = 'ON'
     
             elif msg == "RESET"or msg == "reset":
-                    reset_command = True
-                    while True:
-                        time.sleep(1)
-                        print("waiting for self reset by not feeding watchdog")
-                        s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
+                reset_command_flag = True
+                # while True:
+                #         time.sleep(1)
+                #         print("waiting for self reset by not feeding watchdog")
+                #         s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
             
             elif msg == "ALIVE"or msg == "alive":
                     time_NUC_alive = time.time()
@@ -180,7 +183,7 @@ def bodyguard_master_receiver(s,):
      
         except:
             print("Bodyguard server disconnected,recever thread exit")
-            thread_receiver_alive_flag = True
+            receiver_disconnected_flag = True
             exit()
 
 
@@ -197,11 +200,11 @@ def lcd_initial():
             lcd = I2CLcd(i2c, devices[0], 2, 16)
             lcdFirstLine = "Bodyguard Master"
             lcdSecondLine = "Initialization.."
-            lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+            lcd_flash(lcdFirstLine,lcdSecondLine)
             
         else:
             lcd_exist = False
-            print("No address found")
+            print("No LCD connected")
     except:
         pass
 
@@ -277,7 +280,7 @@ def uart_init():
 
 def main():
     
-    global thread_receiver_alive_flag, state_dict,reset_command,lcd_exist,lcd,time_NUC_alive
+    global receiver_disconnected_flag, state_dict,reset_command_flag,lcd_exist,lcd,time_NUC_alive
 
     # No.1 gpio_initial_value
     Channel0.value(False)
@@ -305,7 +308,7 @@ def main():
     time.sleep(2)
     RelayPoe.value(False)
     state_dict['Poe_Sw'] = 'ON'
-    reset_command = False
+    reset_command_flag = False
     
     # No.5 Ethernet initialation
     w5100_init()
@@ -318,7 +321,7 @@ def main():
 
     # No.8 Creating Thread for Receiving message from computer
     time_NUC_alive = time.time() 
-    _thread.start_new_thread(bodyguard_master_receiver,(s,), deamon=True)
+    _thread.start_new_thread(bodyguard_master_receiver,(s,)) #No deamon=True option in _thread
 
     # No.9 start the watch dog
     wdt = WDT(timeout=WATCHDOG_PERIOD)   
@@ -336,7 +339,7 @@ def main():
 
     lcdFirstLine    = ""
     lcdSecondLine   = "Running..."
-    lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+    lcd_flash(lcdFirstLine,lcdSecondLine)
 
     wdt.feed()
     
@@ -346,10 +349,11 @@ def main():
         wdt.feed()              
         
         # No.2 check reset command from NUC
-        if reset_command == True:
+        if reset_command_flag == True:
             while True:
-                print("reset command received")
                 time.sleep(1)
+                print("Reset command received and will reset within 4s")
+                s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
                 
         # No.3 check photoeye sensor         
         if not photoeye_npn.value(): #Blocked == 0
@@ -401,9 +405,9 @@ def main():
                     print(f"Photoeye:{state_dict['Photoeye']}")
 
                     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                    lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                    lcd_flash(lcdFirstLine,lcdSecondLine)
         # No.4 check if socket disconneted
-        if thread_receiver_alive_flag == True:
+        if receiver_disconnected_flag == True:
             print("main thread exit....")
             #while True:
                 #print("Network disconnected")
@@ -418,7 +422,7 @@ def main():
                     print("NUC restart")
                     time.sleep(1)
 
-                # No.6 reading data from UART
+        # No.6 reading data from UART
                 
         if uart.any(): 
             data1 = uart.read()
@@ -435,7 +439,7 @@ def main():
             lcd_flash(lcdFirstLine,lcdSecondLine)
 
             if command_serial == "reset" or command_serial == "RESET": 
-                reset_command = True
+                reset_command_flag = True
 
         # No.7 Button handle       
         if ButtonPageDn.value() == 0:
@@ -459,7 +463,7 @@ def main():
                     print(str1)
 
                     lcdSecondLine   =  str1
-                    lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                    lcd_flash(lcdFirstLine,lcdSecondLine)
         else:
             if buttonPageDn_hold == True:
                 time.sleep(0.01)
@@ -485,7 +489,7 @@ def main():
             # No.C  release LCD 
             if page_reading_mode == False:
                 lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                lcd_flash(lcd_exist,lcd,lcdFirstLine,lcdSecondLine)
+                lcd_flash(lcdFirstLine,lcdSecondLine)
             else:
                 if time.time() - readingTime >= 3:
                     page_reading_mode = False

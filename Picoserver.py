@@ -17,13 +17,13 @@ class G:
     web_pool=[]
 
     lock_master_message = threading.Lock()
-    message_received_from_m = False
+    message_received_from_master_flag = False
     message_from_master = " "
-    
+    compare_temp = " "
     buff_for_master = " "
 
     lock_web_message = threading.Lock()
-    message_receiced_from_web = False
+    message_receiced_from_web_flag = False
     message_from_web = " "
 
     buff_for_web = " "
@@ -43,11 +43,14 @@ def master_message_handle(master_socket):
         print(f"[Received from master data]-->>{data}-->> {threading.current_thread().ident}")
 
         temp = data.split()
+        print(f"received {temp}")
         msg = temp[-1]
         
         
         G.lock_master_message.acquire()
-        G.message_receiced_from_master = True
+        G.message_received_from_master_flag = True
+
+        G.message_from_master = temp
 
         if msg == "Photoeye:ON":
             G.message_from_master = "Photoeye:ON"
@@ -98,7 +101,7 @@ def web_message_handle(web_socket):
         # msg = temp[-2]
         
         G.lock_web_message.acquire()
-        G.message_receiced_from_web = True
+        G.message_receiced_from_web_flag = True
         G.message_from_web = data
         # if msg == "all on":
         #     G.message_from_web = msg
@@ -176,13 +179,13 @@ if __name__ == '__main__':
                     master_socket = G.master_pool[0]
                     try :
                         master_socket.send(ALIVE_FLAG.encode())
-                        print("ALIVE EVERY 4 SECOND")
+                        print("Report to Pico master -->> ALIVE")
                     except ConnectionResetError as error:
                         print(f"it is disconneted {error}")
             
-            if G.message_receiced_from_web == True:
+            if G.message_receiced_from_web_flag == True:
                 G.lock_web_message.acquire()            
-                G.message_receiced_from_web = False
+                G.message_receiced_from_web_flag = False
                 G.buff_for_web = G.message_from_web
                 print(f"the buff is {G.buff_for_web}")
                 G.lock_web_message.release()
@@ -194,6 +197,27 @@ if __name__ == '__main__':
                     master_socket = G.master_pool[0]
                     master_socket.send(G.buff_for_web.encode())
                     print(f"sent the{G.buff_for_web} to master")
+
+            if G.message_received_from_master_flag == True:
+
+                G.lock_master_message.acquire()            
+                G.message_received_from_master_flag = False
+                G.compare_temp = G.message_from_master
+                G.lock_master_message.release()
+                print(f"the buff is {G.buff_for_master}")
+
+                if G.buff_for_master != G.compare_temp:
+                    G.buff_for_master = G.compare_temp
+                    # update into Database
+                    
+                
+
+
+                
+                
+
+                pass
+
         except KeyboardInterrupt:
             print("you just pressed control + C, and it exited")
             exit()
