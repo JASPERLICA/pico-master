@@ -6,6 +6,9 @@ import copy
 import datetime as dt
 import threading
 import queue
+import json
+import pymysql
+
 
 master_port = 10001
 web_port = 18001
@@ -30,6 +33,8 @@ class G:
 
     time_alive = time.time()
 
+    state_dict_last = None
+
 def master_message_handle(master_socket):
 
     while True:
@@ -40,24 +45,30 @@ def master_message_handle(master_socket):
         except Exception as e:
             print(f"recv from master failed:{e}")
             return
-        print(f"[Received from master data]-->>{data}-->> {threading.current_thread().ident}")
+        
+        if data == " ":
+            break
+        elif len(data) == 0:
+            break
+        else:
+            print(f"[Received from master data]-->>{data}-->> {threading.current_thread().ident}")
 
-        temp = data.split()
-        print(f"received {temp}")
-        msg = temp[-1]
-        
-        
+        # temp = data.split()
+        # print(f"received {temp}")
+        # msg = temp[-1]
+
+
         G.lock_master_message.acquire()
         G.message_received_from_master_flag = True
 
-        G.message_from_master = temp
+        G.message_from_master = data
 
-        if msg == "Photoeye:ON":
-            G.message_from_master = "Photoeye:ON"
-            pass
-        if msg == "Photoeye:OFF":
-            G.message_from_master = "Photoeye:OFF"
-            pass
+        # if msg == "Photoeye:ON":
+        #     G.message_from_master = "Photoeye:ON"
+        #     pass
+        # if msg == "Photoeye:OFF":
+        #     G.message_from_master = "Photoeye:OFF"
+        #     pass
 
         G.lock_master_message.release()
 
@@ -91,7 +102,13 @@ def web_message_handle(web_socket):
         except Exception as e:
             print(f"recv from web failed:{e}")
             return
-        print(f"[Received from web data]-->>{data}-->> {threading.current_thread().ident}")
+        
+        if data == " ":
+            break
+        elif len(data) == 0:
+            break
+        else:
+            print(f"[Received from web data]-->>{data}-->> {threading.current_thread().ident}")
 
         # temp = data.split()
         # msg = temp[-1]
@@ -133,6 +150,43 @@ def accept_web(to_web_sock: socket.socket):
 def init():
 
     G.time_alive = time.time()
+
+
+def opreate_db(state_dict):
+
+        # 打开数据库连接
+    db = pymysql.connect(host='localhost',
+                        user='root',
+                        password='',
+                        database='reviewapp')
+    
+    # 使用cursor()方法获取操作游标 
+    cursor = db.cursor()
+    print(db)
+    date_now= dt.datetime.now().date()
+    time_now= dt.datetime.now().time()
+
+    try:
+
+        sql1 = "insert into reviewapp_picomaster (DATE,TIME,photoeye,computer,poe_sw,channel0,channel1,channel2,channel3,version)\
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        cursor.execute(sql1,[date_now,time_now,state_dict['Photoeye'],state_dict['Computer'],state_dict['Poe_Sw'],state_dict['Channel0'],\
+                state_dict['Channel1'],state_dict['Channel2'],state_dict['Channel3'],state_dict['Version']])
+
+        db.commit()
+        print("insert to DB scuccessfully")
+    except:
+        # 如果发生错误则回滚
+        print("mistake occured")
+        db.rollback()
+    
+    # 关闭数据库连接
+    db.close()
+
+
+
+
+
 
 if __name__ == '__main__':
 
@@ -195,8 +249,12 @@ if __name__ == '__main__':
                 print(f"the buff is {G.buff_for_web}")
                 if len(G.master_pool):
                     master_socket = G.master_pool[0]
-                    master_socket.send(G.buff_for_web.encode())
-                    print(f"sent the{G.buff_for_web} to master")
+                    try:
+                        master_socket.send(G.buff_for_web.encode())
+                        print(f"sent the{G.buff_for_web} to master")
+                    except:
+                        print("socket might disconnected send ot web ")
+                        pass
 
             if G.message_received_from_master_flag == True:
 
@@ -204,12 +262,30 @@ if __name__ == '__main__':
                 G.message_received_from_master_flag = False
                 G.compare_temp = G.message_from_master
                 G.lock_master_message.release()
-                print(f"the buff is {G.buff_for_master}")
+                print(f"the buff is {G.compare_temp}")
+                print(type(G.compare_temp))
 
                 if G.buff_for_master != G.compare_temp:
-                    G.buff_for_master = G.compare_temp
+                        G.buff_for_master = G.compare_temp
+                        try:
+                            state_dict = eval(G.compare_temp)
+                            if G.state_dict_last != state_dict:
+                                G.state_dict_last = state_dict
+                                if (type(state_dict).__name__=='dict'):
+                                    opreate_db(state_dict)
+
+                        except:
+                            print("the message can not eval")
+
+
+               
+
                     # update into Database
-                    
+
+                    # data_deserialized = json.loads(G.buff_for_master)
+
+
+
                 
 
 
@@ -228,4 +304,9 @@ if __name__ == '__main__':
    
 
 
+
+
+
+import pymysql
+import datetime as dt
 

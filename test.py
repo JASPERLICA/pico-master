@@ -902,3 +902,25 @@ __main__.Test
 # 成类变量。如果非要用全局变量，建议把它们全部定义在一个类中，通过“类名.类变量名”来使用它们，这样OK了，根本不用什么globle
 
 # 关键字了。
+
+# PS C:\Users\Jasper\djangoreview2\reviewproject> python manage.py makemigrations
+# socket failed to estabish
+# Migrations for 'reviewapp':
+#   reviewapp\migrations\0009_picomaster_alter_addnewtablefromcmd_options_and_more.py   
+#     - Create model PicoMaster
+#     - Change Meta options on addnewtablefromcmd
+#     - Change Meta options on manager
+# PS C:\Users\Jasper\djangoreview2\reviewproject>
+
+# /etc/init.d/* ：启动脚本放置处
+# 系统上几乎所有的服务启动脚本都放置在这里！事实上这是公认的目录，
+# 我们的 CentOS 实际上放置在 /etc/rc.d/init.d/ 啦！ 不过还是有配置连：
+# 结档到 /etc/init.d/ 的！既然这是公认的目录，因此建议您记忆这个目录即可！
+
+# 旧的 init 启动脚本是『一项一项任务依序启动』的模式，因此不相依的服务也是得要一个一个的等待。
+# 但 目前我们的硬件主机系统与操作系统几乎都支持多核心架构了， 没道理未相依的服务不能同时启动啊! 
+# systemd 就是可以让所有的服务同时启动，因此你会发现到，系统启动的速度变快了!
+
+# # 由于 systemd 可以自定义服务相依性的检查，因此如果 B 服务是架构在 A 服务上面启动的，
+# 那当你在没 有启动 A 服务的情况下仅手动启动 B 服务时， 
+# systemd 会自动帮你启动 A 服务喔!这样就可以免去管 理员得要一项一项服务去分析的麻烦

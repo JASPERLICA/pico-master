@@ -9,7 +9,7 @@ import urequests
 import network
 import time
 import _thread
-import json
+
 #define a global variable
 
 TERMINATION_CHAR            = '\n'
@@ -240,8 +240,8 @@ def w5100_init():
         except:
             time.sleep(1)
             lcdFirstLine = " "
-            lcdSecondLine = "Waiting IP addr"
-            print("waiting DHCP address")
+            lcdSecondLine = "waiting DHCP"
+            print("waiting DHCP")
             lcd_flash(lcdFirstLine,lcdSecondLine)
       
     print('IP address :', nic.ifconfig())
@@ -262,18 +262,14 @@ def socket_init():
             s.connect((NUC_IP, PORT_NUMBER))
             print(s)
             con_flag = False
-            
         except:
             time.sleep(1)
-            lcdFirstLine = f"{NUC_IP}"
-            lcdSecondLine = "waiting socket"
+            lcdFirstLine = " "
+            lcdSecondLine = "linking server"
             print("connecting PC server")
             lcd_flash(lcdFirstLine,lcdSecondLine)
         
     print("Connection established...")
-    lcdFirstLine = f"{NUC_IP}"
-    lcdSecondLine = "established.."
-    lcd_flash(lcdFirstLine,lcdSecondLine)
 
 def uart_init():
 
@@ -300,18 +296,13 @@ def main():
     lcd_initial()
 
     # No.3 Reset NUC
-    lcdFirstLine    = ""
-    lcdSecondLine   =  "NUC starting"
-    lcd_flash(lcdFirstLine,lcdSecondLine)
     RelayNuc.value(True)
     state_dict['Computer'] = 'OFF'
     time.sleep(2)
     RelayNuc.value(False)
     state_dict['Computer'] = 'ON'
 
-    # No.4 Reset SWITCH
-    lcdSecondLine   =  "SWITCH starting"
-    lcd_flash(lcdFirstLine,lcdSecondLine)
+    # No.4 Reset POE
     RelayPoe.value(True)
     state_dict['Poe_Sw'] = 'OFF'
     time.sleep(2)
@@ -320,16 +311,11 @@ def main():
     reset_command_flag = False
     
     # No.5 Ethernet initialation
-    lcdSecondLine   =  "Wiznet starting"
-    lcd_flash(lcdFirstLine,lcdSecondLine)
     w5100_init()
-    time.sleep(.5)
 
     # No.6 UART Initialaztion
-    lcdSecondLine   =  "UART starting"
-    lcd_flash(lcdFirstLine,lcdSecondLine)
     uart_init()
-    time.sleep(.5)
+
     # No.7 Socket initialization
     socket_init()
 
@@ -429,40 +415,12 @@ def main():
             exit()
 
         # No.5 Check if Nuc keep responsing
-        if (time.time() - time_NUC_alive) >= 30: #POE switch restarting need 30s
+        if (time.time() - time_NUC_alive) >= 20:
             print(time.time())
             print(time_NUC_alive)
-            print("over 30's no response")
-
-            #Network is found disconnected 
-            wdt.feed()
-            uart.write(bytes("HELLO","utf-8"))
-            time.sleep(3) # if no reply within 3s
-
-            # check if NUC run properly
-            if uart.any(): 
-                data2 = uart.read()
-                command_serial = data2.decode('utf-8')
-                temp1 = command_serial.split(TERMINATION_CHAR)
-                print(f"command_received {temp1}")
-                command_serial2 = temp1[-1]
-                if command_serial2 == "ALIVE":
-                    RelayPoe.value(True)
-                    state_dict['Poe_Sw'] = 'OFF'
-                    lcdSecondLine   =  "Switch resetting"
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
-                    wdt.feed()
-                    time.sleep(2)
-                    RelayPoe.value(False)
-                    state_dict['Poe_Sw'] = 'ON'
-                    time_NUC_alive = time.time()
-
-            else:
-                while True:
-                        print("NUC restarting")
-                        lcdSecondLine   =  "NUC restarting"
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
-                        time.sleep(1)
+            while True:
+                    print("NUC restart")
+                    time.sleep(1)
 
         # No.6 reading data from UART
                 
@@ -520,9 +478,6 @@ def main():
             try:
                 # s.send(bytes(f"{state_dict.items()} ","utf-8"))
                 s.send(bytes(f"{state_dict} ","utf-8"))
-
-                # data_serialized = json.dumps(state_dict)
-                # s.send(data_serialized.encode('utf-8'))
                 #if disconnected for some reason, OSError: [Errno 104] ECONNRESET
             except:
                 while True:
@@ -530,8 +485,7 @@ def main():
                     time.sleep(1)
 
             # No.B  Update status to NUC
-            uart.write(bytes("ALIVE","utf-8"))
-            # uart.write(bytes(f"{state_dict.items()} ","utf-8"))
+            uart.write(bytes(f"{state_dict.items()} ","utf-8"))
             # uart.write(bytes(f"{str(state_dict)} ","utf-8"))
             
             # No.C  release LCD 
