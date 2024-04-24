@@ -1,0 +1,32 @@
+[Unit]
+Description=BodyGuard Camera Controller
+After=multi-user.target
+[Service]
+Type=simple
+ExecStart=/.bg-controller/bin/python3 /usr/bin/bg_control_board.py
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=bg_camera_controller
+Environment="BG_URL=http://192.168.20.10/api"
+Environment="BG_USERNAME=bgadmin"
+Environment="BG_PASSWORD=BaNaB0Gd"
+Restart=always
+RestartSec=5s
+[Install]
+WantedBy=multi-user.target
+
+12:10
+#!/bin/sh
+python3 -m venv /.bg-controller
+/.bg-controller/bin/pip install -r requirements.txt
+cp bodyguard.service /etc/systemd/system
+cp bg_control_board.py /usr/bin
+systemctl daemon-reload
+systemctl restart bodyguard
+systemctl enable bodyguard
+
+12:11
+#!/bin/sh
+touch /.reverse_photosensor
+
+ 

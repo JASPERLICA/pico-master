@@ -924,3 +924,36 @@ __main__.Test
 # # 由于 systemd 可以自定义服务相依性的检查，因此如果 B 服务是架构在 A 服务上面启动的，
 # 那当你在没 有启动 A 服务的情况下仅手动启动 B 服务时， 
 # systemd 会自动帮你启动 A 服务喔!这样就可以免去管 理员得要一项一项服务去分析的麻烦
+# 配置文件都放置在底下的目录中:
+
+# # /usr/lib/systemd/system/:每个服务最主要的启动脚本设定，有点类似以前的 /etc/init.d 底下的文件;
+# # /run/systemd/system/:系统执行过程中所产生的服务脚本，这些脚本的优先序要比 /usr/lib/systemd/system/ 高!
+# # /etc/systemd/system/:管理员依据主机系统的需求
+# 所建立的执行脚本，其实这个目录有点像以前/etc/rc.d/rc5.d/Sxx 之类的功能!执行优先序又比 /run/systemd/system/ 高喔!
+# # https://www.cnblogs.com/uetucci/p/7755760.html
+
+# import pandas as pd
+
+# dates=range(20161010,20161114)
+# pieces=[]
+# for date in dates:
+#     try:
+#         data=pd.read_csv('A_stock/overview-push-%d/stock overview.csv' %date, encoding='gbk')
+#         pieces.append(data)
+#     except Exception as e:
+#         pass
+#     continue
+# data=pd.concat(pieces)
+
+# 为什么用 try - except 语句. 首先我们来说说，为什么要用 try - except 语句。简单来说，为了避免程序意外退出，而需要使用的语句
+# 使用try:语句可以避免程序在出现异常时崩溃，提高程序的稳定性和可靠性。
+#  try:语句还可以帮助我们更好地处理各种异常情况，使程序更加健壮。 
+# 当程序执行try:中的代码时，如果发生异常，程序会立刻跳转到except块进行异常处理，然后继续执行程序。 
+# 如果没有发生异常，程序会顺序执行try:中的代码，直到try:块结束。
+
+# BaseException 是所有异常的共同基类。它的一个子类， Exception ，是所有非致命异常的基类。
+# 不是 Exception 的子类的异常通常不被处理，因为它们被用来指示程序应该终止。
+# 它们包括由 sys.exit() 引发的 SystemExit ，以及当用户希望中断程序时引发的 KeyboardInterrupt 。
+
+# Exception 可以被用作通配符，捕获（几乎）一切。
+# 然而，好的做法是，尽可能具体地说明我们打算处理的异常类型，并允许任何意外的异常传播下去。

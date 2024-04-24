@@ -1,0 +1,11 @@
+Pico master board function:
+
+1,Power manangement 
+2,block detector
+3,Human-Computer Interface(keyboard and LCD)
+4,communication with Computer
+5,watchdog for computer
+5,watchdog for communication (poe switch)
+5,watchdog for pico itself
+6,tempater detector and fun running 
+7,romote script update

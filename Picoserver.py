@@ -83,7 +83,7 @@ def send_to_master(master_socket, message=""):
 def accept_master(to_master_sock: socket.socket):
 
     while True:
-        print(f"the master accept pid is {os.getpid()}")
+        print(f"waiting for master pico socket and the pid is {os.getpid()}")
         master_socket, addr = to_master_sock.accept()
         print(f"Recived new conn: {master_socket} from {addr}")
         G.master_pool.append(master_socket)
@@ -139,7 +139,7 @@ def send_to_web(web_socket, message=""):
 def accept_web(to_web_sock: socket.socket):
 
     while True:
-        print(f"the web accept pid is {os.getpid()}")
+        print(f"waiting for web server socket and pid is {os.getpid()}")
         web_socket, addr = to_web_sock.accept()
         print(f"Recived new conn: {web_socket} from {addr}")
         G.web_pool.append(web_socket)
@@ -167,11 +167,10 @@ def opreate_db(state_dict):
     time_now= dt.datetime.now().time()
 
     try:
-
-        sql1 = "insert into reviewapp_picomaster (DATE,TIME,photoeye,computer,poe_sw,channel0,channel1,channel2,channel3,version)\
-                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
+        sql1 = "insert into reviewapp_picomaster (DATE,TIME,photoeye,computer,poe_sw,channel0,channel1,channel2,channel3,temper,humidity,version)\
+                values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         cursor.execute(sql1,[date_now,time_now,state_dict['Photoeye'],state_dict['Computer'],state_dict['Poe_Sw'],state_dict['Channel0'],\
-                state_dict['Channel1'],state_dict['Channel2'],state_dict['Channel3'],state_dict['Version']])
+                state_dict['Channel1'],state_dict['Channel2'],state_dict['Channel3'],state_dict['Temper'],state_dict['Humidity'],state_dict['Version']])
 
         db.commit()
         print("insert to DB scuccessfully")
@@ -195,6 +194,7 @@ if __name__ == '__main__':
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
     localhost = s.getsockname()[0]
+
     print(f"localhost ip is {localhost}")
 
     ''' Create sever for master'''

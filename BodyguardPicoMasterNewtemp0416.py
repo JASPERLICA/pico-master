@@ -5,12 +5,12 @@ except:
 from machine import Pin,SPI,UART,I2C,WDT
 from sys import exit
 from I2C_LCD import I2CLcd
-import urequests
+# import urequests
 import network
 import time
 import _thread
-import json
-# from dht import DHT11
+# import json
+# import datetime
 #define a global variable
 
 TERMINATION_CHAR            = '\n'
@@ -25,9 +25,8 @@ reset_command_flag          = False
 lcd_exist                   = False
 lcd_idle                    = True
 time_NUC_alive              = time.time()
-time_command                = time.time()
-command_display_mode        = False
-temperature_reading_mode    = False
+command_time                = time.time
+
 
 state_dict = {'Photoeye': 'OFF', 
             'Computer': 'ON', 
@@ -36,8 +35,6 @@ state_dict = {'Photoeye': 'OFF',
             'Channel1': 'OFF',
             'Channel2': 'OFF',
             'Channel3': 'OFF',
-            # 'Temper'  :  '0',
-            # 'Humidity' : '0',
             'Version':'1.0'
             }
 
@@ -48,8 +45,6 @@ page_list = ['Photoeye',
             'Channel1',
             'Channel2',
             'Channel3',
-            # 'Temper',
-            # 'Humidity',
             'Version'
             ]
 
@@ -75,9 +70,6 @@ StallProgram =  Pin(17, Pin.IN, Pin.PULL_UP)    # Use GP17 as an INPUT for the s
 ButtonPageDn =  Pin(21, Pin.IN, Pin.PULL_UP)    # Check the message Down to next
 ButtonPageUp =  Pin(20, Pin.IN, Pin.PULL_UP)    # Check the message Up
 
-# DHT_pin      = Pin(19, Pin.OUT, Pin.PULL_DOWN) 
-    
-
 Channel0.value(False)
 Channel1.value(False)
 Channel2.value(False)
@@ -101,7 +93,7 @@ RelayPoe.value(False)
       
             
 def bodyguard_master_receiver(s,):
-    global receiver_disconnected_flag,state_dict,reset_command_flag,time_NUC_alive,lcdFirstLine,lcdSecondLine,time_command,command_display_mode
+    global receiver_disconnected_flag,state_dict,reset_command_flag,time_NUC_alive,lcdFirstLine,lcdSecondLine,command_time
     full_msg = ''
     while True:
         try:
@@ -121,14 +113,14 @@ def bodyguard_master_receiver(s,):
             
             print(f"after split message : {msg}")
             s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
+
             
-            if msg != "ALIVE":
-                if lcd_idle:
-                    lcdFirstLine = "Excute Command"
-                    lcdSecondLine = msg
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
-                    command_display_mode = True
-                    time_command    = time.time()
+
+            if lcd_idle:
+                command_time = time.time
+                lcdFirstLine = "Excute Command"
+                lcdSecondLine = msg
+                lcd_flash(lcdFirstLine,lcdSecondLine)
             # No.B command handle
             if msg == "ALL ON" or msg == "all on":
                 Channel0.value(True)    #ON
@@ -230,7 +222,7 @@ def lcd_initial():
 
 def lcd_flash(firstLine,sencondLine):
         global lcd,lcd_exist,lcd_idle
-        if len(firstLine) == 0 or firstLine == " ":
+        if len(firstLine) == 0:
             firstLine = "Bodyguard Master"
         if (lcd_exist == True):
             lcd_idle = False
@@ -248,7 +240,6 @@ def w5100_init():
     nic = network.WIZNET5K(spi,Pin(17),Pin(20)) #spi,cs,reset pin
     nic.active(True)
 
-    global lcdFirstLine,lcdSecondLine 
     #None DHCP
     #nic.ifconfig(('192.168.11.15','255.255.255.0','192.168.11.1','8.8.8.8'))
     #DHCP
@@ -261,7 +252,7 @@ def w5100_init():
             con_flag = False
         except:
             time.sleep(1)
-            lcdFirstLine = "Bodyguard Master"
+            lcdFirstLine = " "
             lcdSecondLine = "Waiting IP addr"
             print("waiting DHCP address")
             if lcd_idle:
@@ -274,7 +265,6 @@ def w5100_init():
 
 def socket_init():
     global s
-    global lcdFirstLine,lcdSecondLine
     count_connection = 0
     con_flag = True
     while (con_flag):
@@ -310,7 +300,7 @@ def uart_init():
 
 def main():
     
-    global receiver_disconnected_flag, state_dict,reset_command_flag,lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command,temperature_reading_mode
+    global receiver_disconnected_flag, state_dict,reset_command_flag,lcd_exist,lcd,lcd_idle,time_NUC_alive
 
     # No.1 gpio_initial_value
     Channel0.value(False)
@@ -371,9 +361,6 @@ def main():
     wdt = WDT(timeout=WATCHDOG_PERIOD)   
     wdt.feed()                         
     
-    # No.10 temperture sensor
-    # sensor = DHT11(DHT_pin)
-
     #local veriable in main
     toggle =  True
     state_dict['Photoeye'] = 'OFF'
@@ -384,7 +371,7 @@ def main():
     buttonPageDn_hold   = False
     last_time_update    = time.time()
 
-    lcdFirstLine    = " "
+    lcdFirstLine    = ""
     lcdSecondLine   = "Running..."
     if lcd_idle:
         lcd_flash(lcdFirstLine,lcdSecondLine)
@@ -556,24 +543,6 @@ def main():
         if time.time()- last_time_update >= 2: #Auto report status to computer every 2 seconds
             last_time_update = time.time()   
             #print(state_dict.items())
-            # temperature_reading_mode = not temperature_reading_mode
-            # if temperature_reading_mode:
-            #     # No.E temperture reading
-            #     try:
-            #         t_reading  = (sensor.temperature)
-            #         h_reading = (sensor.humidity)
-            #     except:
-            #         print("temperture sensor malfuction")
-            #         pass
-            #     else:
-            #         state_dict['Temper'] = t_reading
-            #         state_dict['Humidity'] = h_reading
-            #         print(f"Temperature:{t_reading}")
-            #         print(f"Humidity:{h_reading}")
-            #     # print("Temperature: {}".format(sensor.temperature))
-            #     # print("Humidity: {}".format(sensor.humidity))
-
-            # else:
             # No.A  Update status to NUC
             try:
                 # s.send(bytes(f"{state_dict.items()} ","utf-8"))
@@ -593,46 +562,25 @@ def main():
             # uart.write(bytes(f"{str(state_dict)} ","utf-8"))
             
             # No.C  release LCD 
-            # if page_reading_mode == False:
-            #     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-            #     if lcd_idle:
-            #         lcd_flash(lcdFirstLine,lcdSecondLine)
-            # else:
-            #     if time.time() - readingTime >= 3:
-            #         page_reading_mode = False
-            #         page = 0
-
-            if page_reading_mode == True:
-                if time.time() - readingTime >= 4:
+            if page_reading_mode == False:
+                lcdFirstLine    = " "
+                lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
+                if lcd_idle:
+                    lcd_flash(lcdFirstLine,lcdSecondLine)
+            else:
+                if time.time() - readingTime >= 3:
                     page_reading_mode = False
                     page = 0
-                    lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                    if lcd_idle:
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
             
-            # No.D release lcd
-            if command_display_mode == True:
-                if time.time() - time_command >= 3:
-                    lcdFirstLine = " "
-                    lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                    if lcd_idle:
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
-            
-            # No.E temperture reading
-            # try:
-            #     t_reading  = (sensor.temperature)
-            #     h_reading = (sensor.humidity)
-            # except:
-            #     print("temperture sensor malfuction")
-            #     pass
-            # else:
-            #     state_dict['Temper'] = t_reading
-            #     state_dict['Humidity'] = h_reading
-            #     print(f"Temperature:{t_reading}")
-            #     print(f"Humidity:{h_reading}")
-                # print("Temperature: {}".format(sensor.temperature))
-                # print("Humidity: {}".format(sensor.humidity))
+            if time.time() - command_time >= 3:
+                lcdFirstLine    = " "
+                lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
+                if lcd_idle:
+                    lcd_flash(lcdFirstLine,lcdSecondLine)
 
+            
+
+                    
 if __name__ == "__main__":
     main()
 
