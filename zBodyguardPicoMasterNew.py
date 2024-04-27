@@ -11,7 +11,7 @@ import time
 import _thread
 import json
 # from dht import DHT11
-#2024-04-26-10:01
+
 #define a global variable
 
 TERMINATION_CHAR            = '\n'

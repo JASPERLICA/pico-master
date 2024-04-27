@@ -25,17 +25,6 @@ class DHT11:
         self._temperature = -1
         self._humidity = -1
  
-    # def dht_init(self):
-    #     current_ticks = utime.ticks_us()
-    #     if utime.ticks_diff(current_ticks, self._last_measure) < MIN_INTERVAL_US and (
-    #         self._temperature > -1 or self._humidity > -1
-    #     ):
-    #         # Less than a second since last read, which is too soon according
-    #         # to the datasheet
-    #         return
- 
-    #     self._send_init_signal()
-        
     def measure(self):
         current_ticks = utime.ticks_us()
         if utime.ticks_diff(current_ticks, self._last_measure) < MIN_INTERVAL_US and (
