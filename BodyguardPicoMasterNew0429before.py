@@ -1,4 +1,3 @@
-#BodyguardPicoMaster
 try:
     import usocket as socket
 except:
@@ -30,7 +29,7 @@ time_NUC_alive              = time.time()
 time_command                = time.time()
 command_display_mode        = False
 temperature_reading_mode    = False
-file_update_mode            = False
+
 state_dict = {'Photoeye': 'OFF', 
             'Computer': 'ON', 
             'Poe_Sw': 'ON',
@@ -520,53 +519,21 @@ def main():
                 
         if uart.any(): 
             data1 = uart.read()
-            if len(data1) <= 16: #command
-            # if not file_update_mode:
-                uart.write(f"uart receiced {data1}")
-                try:
-                    command_serial = data1.decode('utf-8')
-                    temp1 = command_serial.split(TERMINATION_CHAR)
-                    print(temp1)              
-                    command_serial = temp1[-2]
-                except:
-                    pass
+            uart.write(f"uart receiced {data1}")
+            try:
+                command_serial = data1.decode('utf-8')
+                temp1 = command_serial.split(TERMINATION_CHAR)
+                print(temp1)              
+                command_serial = temp1[-2]
+            except:
+                pass
 
-                lcdSecondLine   =  command_serial[0:15] # Maximum 16 charactes 
-                if lcd_idle:
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+            lcdSecondLine   =  command_serial
+            if lcd_idle:
+                lcd_flash(lcdFirstLine,lcdSecondLine)
 
-                if command_serial == "reset" or command_serial == "RESET": 
-                    reset_command_flag = True
-
-                # elif "update" in command_serial:                   
-                #     if "I2C_LCD.py" in command_serial:
-                #         with open("version.txt","a") as f:
-                #             f.writelines("newI2C_LCD.py")
-                #             f.close()
-                #     if "LCD_API.py" in command_serial:
-                #         with open("version.txt","a") as f:
-                #             f.writelines("newLCD_API.py")
-                #             f.close()
-                #     if "BodyguardPicoMaster.py" in command_serial:
-                #         with open("version.txt","a") as f:
-                #             f.writelines("newBodyguardPicoMaster.py")
-                #             f.close()
-                    file_update_mode = True
-            else:
-                file_data = data1.decode('utf-8')
-                if file_data.find("#BodyguardPicoMaster") == 0:
-                    with open("newBodyguardPicoMaster.py","w") as f:
-                        f.write(file_data)
-                        f.flush()
-                        f.close()
-
-                    with open("version.txt","a") as f:
-                            f.writelines("newBodyguardPicoMaster.py")
-                            f.flush()
-                            f.close()
-                    while(True):
-                        time.sleep(1)
-                    
+            if command_serial == "reset" or command_serial == "RESET": 
+                reset_command_flag = True
 
         # No.7 Button handle       
         if ButtonPageDn.value() == 0:

@@ -11,7 +11,7 @@ import pymysql
 import serial
 import serial.tools.list_ports
 
-NAME_OF_USB = "CH340"
+
 master_port = 10001
 web_port = 18001
 TERMINATION_CHAR = '\n'
@@ -36,7 +36,6 @@ class G:
     time_alive = time.time()
 
     state_dict_last = None
-    number_of_port = None
 
 def master_message_handle(master_socket):
 
@@ -188,31 +187,11 @@ def opreate_db(state_dict):
 
 
 
-def uart_init():
-    
-    ports_list = list(serial.tools.list_ports.comports())
-    if len(ports_list) <= 0:
-        print("无串口设备。")
-    else:
-        print("可用的串口设备如下：")
-        for comport in ports_list:
-            print(list(comport)[0], "--->>",list(comport)[1])
-            if NAME_OF_USB in list(comport)[1]:
-                G.number_of_port = list(comport)[0]
-                print (f"the number_of_port is {G.number_of_port}")
 
 
 if __name__ == '__main__':
 
     init()
-    uart_init()
-
-    ser = serial.Serial(G.number_of_port, 115200)    # 打开COM17，将波特率配置为115200，其余参数使用默认值
-    if ser.isOpen():                        # 判断串口是否成功打开
-        print("打开串口成功。")
-        print(ser.name)    # 输出串口号
-    else:
-        print("打开串口失败。")
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
@@ -264,36 +243,20 @@ if __name__ == '__main__':
                 G.lock_web_message.acquire()            
                 G.message_receiced_from_web_flag = False
                 G.buff_for_web = G.message_from_web
-                # print(f"the buff is {G.buff_for_web}")
+                print(f"the buff is {G.buff_for_web}")
                 G.lock_web_message.release()
 
-                if "update_main" in G.buff_for_web: #update file through uart
-                    print("update python code for newBodyguardPicoMaster.py and send to UART")
+                G.buff_for_web = G.buff_for_web + TERMINATION_CHAR
+                # G.buff_for_web = G.buff_for_web
+                print(f"the buff is {G.buff_for_web}")
+                if len(G.master_pool):
+                    master_socket = G.master_pool[0]
                     try:
-                        filepath = "C:/Users/Jasper/pico-master/newBodyguardPicoMaster.py"
-                        with open(filepath, 'rb') as file:
-                            content = file.read()  # 读取文件内容
-                            print(content)
-                            print(type(content))
-                            ser.write(content)
-                            # ser.write(bytes(content,"utf-8"))
-                            ser.close()
-                            print("sucessfully send out the file")
+                        master_socket.send(G.buff_for_web.encode())
+                        print(f"sent the{G.buff_for_web} to master")
                     except:
-                        print("something wrong with updating files")
-
-                else:
-                    G.buff_for_web = G.buff_for_web + TERMINATION_CHAR
-                    # G.buff_for_web = G.buff_for_web
-                    # print(f"the buff is {G.buff_for_web}")
-                    if len(G.master_pool):
-                        master_socket = G.master_pool[0]
-                        try:
-                            master_socket.send(G.buff_for_web.encode())
-                            print(f"sent the{G.buff_for_web} to master")
-                        except:
-                            print("socket might disconnected send ot web ")
-                            pass
+                        print("socket might disconnected send ot web ")
+                        pass
 
             if G.message_received_from_master_flag == True:
 
@@ -301,7 +264,7 @@ if __name__ == '__main__':
                 G.message_received_from_master_flag = False
                 G.compare_temp = G.message_from_master
                 G.lock_master_message.release()
-                # print(f"the buff is {G.compare_temp}")
+                print(f"the buff is {G.compare_temp}")
                 print(type(G.compare_temp))
 
                 if G.buff_for_master != G.compare_temp:
@@ -323,6 +286,13 @@ if __name__ == '__main__':
 
                     # data_deserialized = json.loads(G.buff_for_master)
 
+
+
+                
+
+
+                
+                
 
                 pass
 

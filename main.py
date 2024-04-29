@@ -16,12 +16,12 @@ try:
         if filename == 'version.txt':    
             with open('version.txt',"r+") as f:
                 str = f.read()
-                if str == "BodyguardPicoMasterNew.py":
+                if str == "newBodyguardPicoMaster.py":
                     print("new version Bodyguard was found")
                     os.remove("BodyguardPicoMaster.py")
                     print("old version Bodyguard was removed")
                     sleep(0.1)
-                    os.rename("BodyguardPicoMasterNew.py", "BodyguardPicoMaster.py")
+                    os.rename("newBodyguardPicoMaster.py", "BodyguardPicoMaster.py")
                     print("it has renamed ")
                     f.close()
                     os.remove('version.txt')
@@ -38,23 +38,6 @@ try:
 except StopIteration:
     pass
             
-#         data = data2.decode()
-
-#  with open("13.py","wb") as f:
-#                     f.write(data)
-#             f.close()
-
-#         file_name_list.append(filename)
-      
-# except StopIteration:
-#     pass
-
-# print(file_name_list)
-
-# for file in file_name_list:
-#     print(file)
-
-
 iter_new = os.ilistdir()
 
 try:

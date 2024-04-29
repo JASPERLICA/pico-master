@@ -1,4 +1,7 @@
 #BodyguardPicoMaster
+#update date&time : 2024/04/29
+VERSION =  1.1
+
 try:
     import usocket as socket
 except:
@@ -40,7 +43,8 @@ state_dict = {'Photoeye': 'OFF',
             'Channel3': 'OFF',
             # 'Temper'  :  '0',
             # 'Humidity' : '0',
-            'Version':'1.0'
+            # 'Version':'1.0'
+            'Version': VERSION
             }
 
 page_list = ['Photoeye', 
@@ -312,7 +316,8 @@ def socket_init():
 def uart_init():
 
     global uart
-    uart = UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
+    # uart = UART(0, baudrate=9600, tx=Pin(0), rx=Pin(1))
+    uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1),timeout=1)
     uart.init(bits=8, parity=None, stop=1)
     uart.write(bytes('Bodyguard Pico start...',"utf-8"))
 
@@ -561,7 +566,7 @@ def main():
                         f.close()
 
                     with open("version.txt","a") as f:
-                            f.writelines("newBodyguardPicoMaster.py")
+                            f.write("newBodyguardPicoMaster.py")
                             f.flush()
                             f.close()
                     while(True):
