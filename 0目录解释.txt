@@ -1,0 +1,3 @@
+bodyguarddaemon.service ：安装到linux自动启动
+newBodyguardPicoMaster.py: 最新的pico程序
+Picoserver.py 安装到linux里面运行的daemon

@@ -1,0 +1,26 @@
+//在/etc/systemd/system/下创建一个服务，如下
+# vim ser.service
+
+//[Unit] 区块：启动顺序与依赖关系。
+[Unit]
+//Description字段给出当前服务的简单描述
+Description=Run BodyguardPicoMaster Script at Startup
+After=default.target
+
+//Service区块定义如何启动当前服务
+[Service]
+//ExecStart字段：定义启动进程时执行的命令
+ExecStart=/home/jasper/Desktop/Picoserver.py
+
+//Install区块，定义如何安装这个配置文件，即怎样做到开机启动
+[Install]
+//WantedBy字段：表示该服务所在的 Target,Target的含义是服务组，表示一组服务
+WantedBy=default.target
+
+
+//更新服务配置文件，并使能服务
+# systemctl daemon-reload
+# systemctl enable ser.service
+
+//重启系统
+# reboot

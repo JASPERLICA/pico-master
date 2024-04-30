@@ -29,4 +29,7 @@ systemctl enable bodyguard
 #!/bin/sh
 touch /.reverse_photosensor
 
+
+======?==
+systemctl enable mysql
  

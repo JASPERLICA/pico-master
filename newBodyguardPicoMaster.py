@@ -1,6 +1,6 @@
 #BodyguardPicoMaster
-#update date&time : 2024/04/29
-VERSION =  1.1
+#update date&time : 2024/04/30
+VERSION =  "1.02"
 
 try:
     import usocket as socket
@@ -41,8 +41,8 @@ state_dict = {'Photoeye': 'OFF',
             'Channel1': 'OFF',
             'Channel2': 'OFF',
             'Channel3': 'OFF',
-            # 'Temper'  :  '0',
-            # 'Humidity' : '0',
+            'Temper'  :  '0',
+            'Humidity' : '0',
             # 'Version':'1.0'
             'Version': VERSION
             }
@@ -54,8 +54,8 @@ page_list = ['Photoeye',
             'Channel1',
             'Channel2',
             'Channel3',
-            # 'Temper',
-            # 'Humidity',
+            'Temper',
+            'Humidity',
             'Version'
             ]
 
@@ -132,7 +132,7 @@ def bodyguard_master_receiver(s,):
             #     time.sleep(0.02)
             #     print("waiting for global_lock")
 
-            s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
+            # s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
             
             if msg != "ALIVE":
                 if lcd_idle:
@@ -628,10 +628,11 @@ def main():
             # No.A  Update status to NUC
             try:
                 # s.send(bytes(f"{state_dict.items()} ","utf-8"))
-                s.send(bytes(f"{state_dict} ","utf-8"))
+                
+                # s.send(bytes(f"{state_dict} ","utf-8"))
 
-                # data_serialized = json.dumps(state_dict)
-                # s.send(data_serialized.encode('utf-8'))
+                data_json = json.dumps(state_dict)
+                s.send(data_json.encode('utf-8'))
                 #if disconnected for some reason, OSError: [Errno 104] ECONNRESET
             except:
                 while True:

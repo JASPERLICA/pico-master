@@ -161,7 +161,7 @@ def opreate_db(state_dict):
     db = pymysql.connect(host='localhost',
                         user='root',
                         password='',
-                        database='reviewapp')
+                        database='picoweb')
     
     # 使用cursor()方法获取操作游标 
     cursor = db.cursor()
@@ -170,7 +170,7 @@ def opreate_db(state_dict):
     time_now= dt.datetime.now().time()
 
     try:
-        sql1 = "insert into reviewapp_picomaster (DATE,TIME,photoeye,computer,poe_sw,channel0,channel1,channel2,channel3,temper,humidity,version)\
+        sql1 = "insert into picoweb_picomaster (DATE,TIME,photoeye,computer,poe_sw,channel0,channel1,channel2,channel3,temper,humidity,version)\
                 values(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"
         cursor.execute(sql1,[date_now,time_now,state_dict['Photoeye'],state_dict['Computer'],state_dict['Poe_Sw'],state_dict['Channel0'],\
                 state_dict['Channel1'],state_dict['Channel2'],state_dict['Channel3'],state_dict['Temper'],state_dict['Humidity'],state_dict['Version']])
@@ -301,20 +301,29 @@ if __name__ == '__main__':
                 G.message_received_from_master_flag = False
                 G.compare_temp = G.message_from_master
                 G.lock_master_message.release()
-                # print(f"the buff is {G.compare_temp}")
+                print(f"the buff is {G.compare_temp}")
                 print(type(G.compare_temp))
 
                 if G.buff_for_master != G.compare_temp:
                         G.buff_for_master = G.compare_temp
                         try:
-                            state_dict = eval(G.compare_temp)
+                            state_dict = json.loads(G.compare_temp)
+                            print(state_dict)
                             if G.state_dict_last != state_dict:
                                 G.state_dict_last = state_dict
                                 if (type(state_dict).__name__=='dict'):
                                     opreate_db(state_dict)
 
+                            # state_dict = eval(G.compare_temp)
+                            # if G.state_dict_last != state_dict:
+                            #     G.state_dict_last = state_dict
+                            #     if (type(state_dict).__name__=='dict'):
+                            #         opreate_db(state_dict)
+                        except ValueError:
+                            print(f"{G.compare_temp} is Not Json format")
                         except:
-                            print("the message can not eval")
+                            print("something wrong with json load")
+                            # print("the message can not eval")
 
 
                
