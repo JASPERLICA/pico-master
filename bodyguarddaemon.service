@@ -1,8 +1,8 @@
 
 [Unit]
 Description=Run BodyguardPicoMaster Script at Startup
-After=multi-user.target
 
+After=default.target
 
 [Service]
 ExecStart=/usr/bin/python3 /home/jasper/Desktop/Picoserver.py

@@ -1,6 +1,6 @@
 #BodyguardPicoMaster
 #update date&time : 2024/04/30
-VERSION =  "1.02"
+VERSION =  1.02
 
 try:
     import usocket as socket
@@ -20,7 +20,7 @@ import json
 
 TERMINATION_CHAR            = '\n'
 SERIAL_TERMINATION_CHAR     = '\r'
-NUC_IP = "192.168.20.155"   #server running on my Japer li pc
+NUC_IP = "192.168.20.104"   #server running on my Japer li pc
 #NUC_IP = "192.168.0.102"   #server running on my Japer li pc at home network
 PORT_NUMBER = 10001
 
@@ -34,6 +34,9 @@ time_command                = time.time()
 command_display_mode        = False
 temperature_reading_mode    = False
 file_update_mode            = False
+lcdFirstLine    = ""
+lcdSecondLine   = ""
+    
 state_dict = {'Photoeye': 'OFF', 
             'Computer': 'ON', 
             'Poe_Sw': 'ON',
@@ -558,7 +561,10 @@ def main():
                 #             f.close()
                     file_update_mode = True
             else:
-                file_data = data1.decode('utf-8')
+                try:
+                    file_data = data1.decode('utf-8')
+                except:
+                    print("wrong data from UART")
                 if file_data.find("#BodyguardPicoMaster") == 0:
                     with open("newBodyguardPicoMaster.py","w") as f:
                         f.write(file_data)

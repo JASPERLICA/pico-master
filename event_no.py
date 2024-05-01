@@ -59,7 +59,7 @@ class AddTask(Thread):
         while not self.event.is_set():
         # while True:
             print(f'Sleep start...{datetime.now().time()}')
-            self.event.wait(5)
+            self.event.wait(5) 
             # time.sleep(5)
             print(f'Sleep end...{datetime.now().time()}')
             self.sum_num += 5
