@@ -32,4 +32,24 @@ touch /.reverse_photosensor
 
 ======?==
 systemctl enable mysql
+
+=================
+
+[Unit]
+Description=Run BodyguardPicoMaster Script at Startup
+//After=multi-user.target
+//After=network.target
+After=default.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/jasper/Desktop/Picoserver.py
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=pico_service
+Restart=always
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
+
  

@@ -1,6 +1,6 @@
 #BodyguardPicoMaster
-#update date&time : 2024/08/14
-VERSION =  1.04
+#update date&time : 2024/04/30
+VERSION =  1.02
 
 try:
     import usocket as socket
@@ -14,14 +14,12 @@ import network
 import time
 import _thread
 import json
-import BME280
-
-
+# from dht import DHT11
+#2024-04-26-10:01
 #define a global variable
+
 TERMINATION_CHAR            = '\n'
 SERIAL_TERMINATION_CHAR     = '\r'
-#NUC_IP = "192.168.30.1"   #server running on my Jasper_server linux NUC
-
 NUC_IP = "192.168.20.104"   #server running on my Japer li pc
 #NUC_IP = "192.168.0.102"   #server running on my Japer li pc at home network
 PORT_NUMBER = 10001
@@ -36,12 +34,9 @@ time_command                = time.time()
 command_display_mode        = False
 temperature_reading_mode    = False
 file_update_mode            = False
-Run_led_flip            	= False
 lcdFirstLine    = ""
 lcdSecondLine   = ""
-
-photoeye_dict = {'Photoeye': 'OFF'
-            }
+    
 state_dict = {'Photoeye': 'OFF', 
             'Computer': 'ON', 
             'Poe_Sw': 'ON',
@@ -76,53 +71,21 @@ state_dict['Poe_Sw']    = 'ON'
 
 # Bodyguard Pinout definition
 
-# Channel0    =  Pin(5, Pin.OUT)                  # GP5 as Channel 0 LED panel
-# Channel1    =  Pin(6, Pin.OUT)                  # GP6 as Channel 1 LED panel
-# Channel2    =  Pin(7, Pin.OUT)                  # GP7 as Channel 2 LED panel
-# Channel3    =  Pin(15, Pin.OUT)                 # GP15 as Channel 3 LED panel
-# RelayNuc    =  Pin(4, Pin.OUT)                  # GP4 as Relay for Nuc
-# RelayPoe    =  Pin(3, Pin.OUT)                  # GP3 as Realy for POE
+Channel0    =  Pin(5, Pin.OUT)                  # GP5 as Channel 0 LED panel
+Channel1    =  Pin(6, Pin.OUT)                  # GP6 as Channel 1 LED panel
+Channel2    =  Pin(7, Pin.OUT)                  # GP7 as Channel 2 LED panel
+Channel3    =  Pin(15, Pin.OUT)                 # GP15 as Channel 3 LED panel
+RelayNuc    =  Pin(4, Pin.OUT)                  # GP4 as Relay for Nuc
+RelayPoe    =  Pin(3, Pin.OUT)                  # GP3 as Realy for POE
 
-# LED		     =  Pin(22, Pin.OUT)                # GP5 as Channel 0 LED panel
-# photoeye_npn =  Pin(2, Pin.IN, Pin.PULL_UP)     # GP2 as an INPUT for the photoeye
-# StallProgram =  Pin(17, Pin.IN, Pin.PULL_UP)    # Use GP17 as an INPUT for the switch
-# ButtonPageDn =  Pin(21, Pin.IN, Pin.PULL_UP)    # Check the message Down to next
-# ButtonPageUp =  Pin(20, Pin.IN, Pin.PULL_UP)    # Check the message Up
-
-# Channel0    =  Pin(26, Pin.OUT)                  # GP5 as Channel 0 LED panel
-# Channel1    =  Pin(19, Pin.OUT)                  # GP6 as Channel 1 LED panel
-# Channel2    =  Pin(18, Pin.OUT)                  # GP7 as Channel 2 LED panel
-# Channel3    =  Pin(16, Pin.OUT)                 # GP15 as Channel 3 LED panel
-# RelayNuc    =  Pin(21, Pin.OUT)                  # GP4 as Relay for Nuc
-# RelayPoe    =  Pin(22, Pin.OUT)                  # GP3 as Realy for POE
-
-# Power_LCD_Sensor   =  Pin(2, Pin.OUT)                  # GP5 as Channel 0 LED panel
-
-# # LED		     =  Pin(22, Pin.OUT)                # GP5 as Channel 0 LED panel
-# photoeye_npn =  Pin(28, Pin.IN, Pin.PULL_UP)     # GP2 as an INPUT for the photoeye
-# StallProgram =  Pin(17, Pin.IN, Pin.PULL_UP)    # Use GP17 as an INPUT for the switch
-# ButtonPageDn =  Pin(4, Pin.IN, Pin.PULL_UP)    # Check the message Down to next
-# ButtonPageUp =  Pin(20, Pin.IN, Pin.PULL_UP)    # Check the message Up
+LED		     =  Pin(22, Pin.OUT)                # GP5 as Channel 0 LED panel
+photoeye_npn =  Pin(2, Pin.IN, Pin.PULL_UP)     # GP2 as an INPUT for the photoeye
+StallProgram =  Pin(17, Pin.IN, Pin.PULL_UP)    # Use GP17 as an INPUT for the switch
+ButtonPageDn =  Pin(21, Pin.IN, Pin.PULL_UP)    # Check the message Down to next
+ButtonPageUp =  Pin(20, Pin.IN, Pin.PULL_UP)    # Check the message Up
 
 # DHT_pin      = Pin(19, Pin.OUT, Pin.PULL_DOWN) 
 # global_lock  = False   
-
-Channel0    =  Pin(8, Pin.OUT)                  # GP5 as Channel 0 LED panel
-Channel1    =  Pin(9, Pin.OUT)                  # GP6 as Channel 1 LED panel
-Channel2    =  Pin(22, Pin.OUT)                  # GP7 as Channel 2 LED panel
-Channel3    =  Pin(19, Pin.OUT)                 # GP15 as Channel 3 LED panel
-RelayNuc    =  Pin(26, Pin.OUT)                  # GP4 as Relay for Nuc
-RelayPoe    =  Pin(27, Pin.OUT)                  # GP3 as Realy for POE
-
-Power_LCD_Sensor   =  Pin(2, Pin.OUT)                  # GP5 as Channel 0 LED panel
-
-photoeye_npn =  Pin(28, Pin.IN, Pin.PULL_UP)     # GP2 as an INPUT for the photoeye
-StallProgram =  Pin(17, Pin.IN, Pin.PULL_UP)    # Use GP17 as an INPUT for the switch
-ButtonPageDn =  Pin(4, Pin.IN, Pin.PULL_UP)    # Check the message Down to next
-wiznet_reset =  Pin(20, Pin.OUT)    #wiznet reset
-MCU_reset    =  Pin(3, Pin.OUT)     #mcu reset
-MCU_run_led  =  Pin(15, Pin.OUT)     #mcu reset
-Fun          =  Pin(5, Pin.OUT)                  # GP5 as Channel 0 LED panel
 
 Channel0.value(False)
 Channel1.value(False)
@@ -130,10 +93,8 @@ Channel2.value(False)
 Channel3.value(False)
 RelayNuc.value(False)
 RelayPoe.value(False)
-Power_LCD_Sensor.value(True)
-Fun.value(False)
-# i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
-i2c = I2C(0, sda=Pin(12), scl=Pin(13), freq=400000)
+
+
 
 # Bodyguard tower DHCP configuration
 # def w5100_init():
@@ -262,8 +223,8 @@ def bodyguard_master_receiver(s,):
 
 def lcd_initial():
     #LCD display
-    global lcd,lcd_exist,lcd_idle, i2c
-    # i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
+    global I2C,lcd,lcd_exist,lcd_idle
+    i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
     devices = i2c.scan()
     lcd_exist = False
     try:
@@ -295,37 +256,6 @@ def lcd_flash(firstLine,sencondLine):
             lcd.putstr(sencondLine)
             lcd_idle = True
 
-def temper_hum_pres_reading():
-    global i2c
-    try:
-        # Initialize BME280 sensor
-        ambinent = []
-        bme = BME280.BME280(i2c=i2c)
-        
-        # Read sensor data
-        tempC = bme.temperature
-        hum = bme.humidity
-        pres = bme.pressure
-        ambinent.append(tempC)
-        ambinent.append(hum)
-        ambinent.append(pres)
-        # Convert temperature to fahrenheit
-        tempF = (bme.read_temperature()/100) * (9/5) + 32
-        tempF = str(round(tempF, 2)) + 'F'
-        
-        # Print sensor readings
-        print('Temperature: ', tempC)
-        print('Temperature: ', tempF)
-        print('Humidity: ', hum)
-        print('Pressure: ', pres)
-    
-        
-        return(ambinent)
-        
-    except Exception as e:
-        # Handle any exceptions during sensor reading
-        print('An error occurred:', e)
-        return(ambinent)
 
 def w5100_init():
 
@@ -397,7 +327,7 @@ def uart_init():
 def main():
     
     global receiver_disconnected_flag, state_dict,reset_command_flag,\
-        lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command,I2C,Run_led_flip
+        lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command
             # temperature_reading_mode,global_lock
 
     # No.1 gpio_initial_value
@@ -410,9 +340,7 @@ def main():
     state_dict['Channel2'] = 'OFF'
     state_dict['Channel3'] = 'OFF'
 
-    
-    # No.2 LCD initializationc
-    Power_LCD_Sensor.value(False)
+    # No.2 LCD initialization
     lcd_initial()
 
     # No.3 Reset NUC
@@ -469,11 +397,11 @@ def main():
     # print("i am here 2")
     wdt.feed()
     #local veriable in main
-    # toggle =  True
+    toggle =  True
     state_dict['Photoeye'] = 'OFF'
 
     page = 0
-    max_page = 9
+    max_page = 7
     page_reading_mode   = False
     buttonPageDn_hold   = False
     last_time_update    = time.time()
@@ -502,7 +430,6 @@ def main():
             if  state_dict['Photoeye'] == 'OFF':
                 state_dict['Photoeye'] = 'ON'
                 
-                photoeye_dict['Photoeye'] = 'ON'
                 Channel0.value(True)    #ON
                 state_dict['Channel0'] = 'ON'
                 Channel1.value(True)    #ON
@@ -513,9 +440,7 @@ def main():
                 state_dict['Channel3'] = 'ON'
                 
                 try :
-                    data_json1 = json.dumps(photoeye_dict)
-                    s.send(data_json1.encode('utf-8'))
-                    #s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
+                    s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
                 except:
                     while True:
                         print("ethernet disconnected")
@@ -535,7 +460,6 @@ def main():
                 time.sleep(0.2)     #Anti disruption
                 if photoeye_npn.value(): # == 1
                     state_dict['Photoeye'] = 'OFF'
-                    photoeye_dict['Photoeye'] = 'OFF'
                     
                     Channel0.value(False)   #OFF
                     state_dict['Channel0'] = 'OFF'
@@ -545,20 +469,8 @@ def main():
                     state_dict['Channel2'] = 'OFF'
                     Channel3.value(False)   #OFF
                     state_dict['Channel3'] = 'OFF'
-
-                    data_json = json.dumps(photoeye_dict)
-                    s.send(data_json.encode('utf-8'))
-
-                    try :
-                        data_json2 = json.dumps(photoeye_dict)
-                        s.send(data_json2.encode('utf-8'))
-                        #s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
-                    except:
-                        while True:
-                            print("ethernet disconnected")
-                            time.sleep(1)
-
-                    # s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
+                
+                    s.send(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
                     uart.write(bytes(f"Photoeye:{state_dict['Photoeye']}{TERMINATION_CHAR}","utf-8"))
                     
                     print(f"Photoeye:{state_dict['Photoeye']}")
@@ -675,8 +587,8 @@ def main():
                 if ButtonPageDn.value() == 0:
                     buttonPageDn_hold = True
                     
-                    # toggle = not toggle
-                    # LED.value(toggle)
+                    toggle = not toggle
+                    LED.value(toggle)
                     page_reading_mode = True
                     readingTime = time.time()
                     page += 1
@@ -699,12 +611,7 @@ def main():
 
         # No.8 Every other second : Update status to NUC // Uart
         if time.time()- last_time_update >= 2: #Auto report status to computer every 2 seconds
-            last_time_update = time.time()
-            Run_led_flip = (not Run_led_flip)
-            if Run_led_flip == True:
-                MCU_run_led.value(True)
-            else:
-                MCU_run_led.value(False)
+            last_time_update = time.time()   
             #print(state_dict.items())
             # temperature_reading_mode = not temperature_reading_mode
             # if temperature_reading_mode:
@@ -769,24 +676,23 @@ def main():
                     if lcd_idle:
                         lcd_flash(lcdFirstLine,lcdSecondLine)
             
-            #No.E temperture reading
-            ambinent_TAP = temper_hum_pres_reading()
-            if ambinent_TAP is not None:
-                state_dict['Temper'] = ambinent_TAP[0]
-                state_dict['Humidity'] = ambinent_TAP[1]
-                print(f"the tempture is {state_dict['Temper']}")
-                
-                temp0 = state_dict['Temper'].split("C", 1)
-
-                # temp0 = state_dict['Temper'][:4]
-                print(temp0[0])
-                temp2 = float(temp0[0])
-                if temp2 >= 22 :
-                    Fun.value(True)
-                elif temp2 <= 18 :        
-                    Fun.value(False)
-
-                
+            # No.E temperture reading
+            # try:
+            #     sensor.dht_init()
+            #     global_lock = True
+            #     t_reading  = (sensor.temperature)
+            #     h_reading = (sensor.humidity)
+            #     global_lock = False
+            # except:
+            #     print("temperture sensor malfuction")
+            #     pass
+            # else:
+            #     state_dict['Temper'] = t_reading
+            #     state_dict['Humidity'] = h_reading
+            #     print(f"Temperature:{t_reading}")
+            #     print(f"Humidity:{h_reading}")
+                # print("Temperature: {}".format(sensor.temperature))
+                # print("Humidity: {}".format(sensor.humidity))
 
 if __name__ == "__main__":
     main()

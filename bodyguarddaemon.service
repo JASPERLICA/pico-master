@@ -3,7 +3,7 @@
 Description=Run BodyguardPicoMaster Script at Startup
 
 After=default.target
-
+After=netwrok.target
 [Service]
 ExecStart=/usr/bin/python3 /home/jasper/Desktop/Picoserver.py
 StandardOutput=syslog

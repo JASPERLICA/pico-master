@@ -1,11 +1,53 @@
 Pico master board function:
 
-1,Power manangement 
-2,block detector
-3,Human-Computer Interface(keyboard and LCD)
-4,communication with Computer
-5,watchdog for computer
-5,watchdog for communication (poe switch)
-5,watchdog for pico itself
-6,tempater detector and fun running 
-7,romote script update
+Hardware:
+
+4 channel LED board switch(solid state,surge protection)
+1 channel NUC Reset
+1 channel switch Reset
+1 channel photoeye sensor
+1 channel 5v output for regular switch
+1 USB to UART
+l LCD display
+1 FUN controller
+1 ambient temperature, humidity, pressure
+2 keys for hardrest, pageup( pagedown)
+1 LED indicator (malfuction)
+
+Hardware need to improved:
+
+Wiznet reset required;
+surge protection;
+
+
+
+Software:
+
+input: 
+block detector(photoeye sensor)
+ambient temperature, humidity, pressure
+
+output:
+4 channel LED board power switch
+LCD display all states and malfuction review
+LED indicator for malfuction
+FUN controller
+
+communication:
+Ethernet(report instent state to computer, excute command from computer)
+UART(excute high level command: reset system, upgrade code for Pico)
+
+Monitor:
+watchdog for computer
+watchdog for  POE switch
+watchdog for pico itself
+
+
+Testing Part:
+
+
+
+
+
+
+

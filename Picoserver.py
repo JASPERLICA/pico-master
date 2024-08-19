@@ -216,6 +216,7 @@ if __name__ == '__main__':
 
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.connect(("8.8.8.8", 80))
+    host, port = s.getsockname()
     localhost = s.getsockname()[0]
 
     print(f"localhost ip is {localhost}")

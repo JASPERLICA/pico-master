@@ -1,6 +1,6 @@
 #BodyguardPicoMaster
-#update date&time : 2024/04/30
-VERSION =  1.02
+#update date&time : 2024/05/02
+VERSION =  1.03
 
 try:
     import usocket as socket
@@ -14,10 +14,10 @@ import network
 import time
 import _thread
 import json
-# from dht import DHT11
-#2024-04-26-10:01
-#define a global variable
+import BME280
 
+
+#define a global variable
 TERMINATION_CHAR            = '\n'
 SERIAL_TERMINATION_CHAR     = '\r'
 NUC_IP = "192.168.20.104"   #server running on my Japer li pc
@@ -223,8 +223,8 @@ def bodyguard_master_receiver(s,):
 
 def lcd_initial():
     #LCD display
-    global I2C,lcd,lcd_exist,lcd_idle
-    i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
+    global lcd,lcd_exist,lcd_idle, i2c
+    # i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
     devices = i2c.scan()
     lcd_exist = False
     try:
@@ -256,6 +256,36 @@ def lcd_flash(firstLine,sencondLine):
             lcd.putstr(sencondLine)
             lcd_idle = True
 
+def temper_hum_pres_reading():
+    global i2c
+    try:
+        # Initialize BME280 sensor
+        ambinent = []
+        bme = BME280.BME280(i2c=i2c)
+        
+        # Read sensor data
+        tempC = bme.temperature
+        hum = bme.humidity
+        pres = bme.pressure
+        ambinent.append(tempC)
+        ambinent.append(hum)
+        ambinent.append(pres)
+        # Convert temperature to fahrenheit
+        tempF = (bme.read_temperature()/100) * (9/5) + 32
+        tempF = str(round(tempF, 2)) + 'F'
+        
+        # Print sensor readings
+        print('Temperature: ', tempC)
+        print('Temperature: ', tempF)
+        print('Humidity: ', hum)
+        print('Pressure: ', pres)
+
+        return(ambinent)
+        
+    except Exception as e:
+        # Handle any exceptions during sensor reading
+        print('An error occurred:', e)
+        return(ambinent)
 
 def w5100_init():
 
@@ -327,7 +357,7 @@ def uart_init():
 def main():
     
     global receiver_disconnected_flag, state_dict,reset_command_flag,\
-        lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command
+        lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command,I2C
             # temperature_reading_mode,global_lock
 
     # No.1 gpio_initial_value
@@ -339,7 +369,11 @@ def main():
     state_dict['Channel1'] = 'OFF'
     state_dict['Channel2'] = 'OFF'
     state_dict['Channel3'] = 'OFF'
+     
+    # No.1.5 LCD initialization
 
+    i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
+    
     # No.2 LCD initialization
     lcd_initial()
 
@@ -676,7 +710,15 @@ def main():
                     if lcd_idle:
                         lcd_flash(lcdFirstLine,lcdSecondLine)
             
-            # No.E temperture reading
+            #No.E temperture reading
+            ambinent_TAP = temper_hum_pres_reading()
+            if ambinent_TAP is not None:
+                state_dict['Temper'] = ambinent_TAP[0]
+                state_dict['Humidity'] = ambinent_TAP[1]
+
+                
+
+            
             # try:
             #     sensor.dht_init()
             #     global_lock = True

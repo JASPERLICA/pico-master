@@ -1,0 +1,38 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    eth0:
+      dhcp4: true
+      dhcp-identifier: mac
+      nameservers:
+        addresses: ['8.8.8.8', '8.8.4.4']
+    eth1:
+      optional: true
+      dhcp4: false
+      addresses: ['192.168.20.10/24', '192.168.1.20/24']
+      nameservers:
+        addresses: ['8.8.8.8', '8.8.4.4']
+1:24
+version: "3.3"
+services:
+  bg-dhcp:
+    restart: always
+    image: strm/dnsmasq:latest
+    container_name: bg-dhcp
+    network_mode: host
+    volumes:
+      - ./dnsmasq.conf:/etc/dnsmasq.conf
+    cap_add:
+      - NET_ADMIN
+1:25
+# Set the interface on which dnsmasq operates.
+# If not set, all the interfaces is used.
+interface=eth1
+# To disable dnsmasq's DNS server functionality.
+port=0
+# To enable dnsmasq's DHCP server functionality.
+dhcp-range=192.168.20.100,192.168.20.199,255.255.255.0
+# Set gateway as Router. Following two lines are identical.
+dhcp-option=option:router,192.168.20.10
+dhcp-authoritative
