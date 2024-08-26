@@ -11,13 +11,7 @@ import pymysql
 import serial
 import serial.tools.list_ports
 
-
-#可用的串口设备如下：
-#/dev/ttyUSB0 --->> USB Serial
-#the number_of_port is /dev/ttyUSB0
-
-#NAME_OF_USB = "CH340"
-NAME_OF_USB = "USB Serial"
+NAME_OF_USB = "CH340"
 master_port = 10001
 web_port = 18001
 TERMINATION_CHAR = '\n'
@@ -164,22 +158,11 @@ def init():
 def opreate_db(state_dict):
 
         # 打开数据库连接
-    #db = pymysql.connect(host='localhost',
-    # db = pymysql.connect(host='192.168.30.187',
-    #                     user='root',
-    #                     password='',
-    #                     #password='123456',
-    #                     database='picoweb')
-    
-    db = pymysql.connect(host='192.168.30.187',
+    db = pymysql.connect(host='localhost',
                         user='root',
-                        port=3306,
-                        #password='',
-                        password='123456',
+                        password='',
                         database='picoweb')
     
-
-
     # 使用cursor()方法获取操作游标 
     cursor = db.cursor()
     print(db)
@@ -215,12 +198,7 @@ def uart_init():
         for comport in ports_list:
             print(list(comport)[0], "--->>",list(comport)[1])
             if NAME_OF_USB in list(comport)[1]:
-                #below for linux
-                # location = list(comport)[0]
-                # loca_list= location.split("/")
-                # G.number_of_port = loca_list[-1]
-                G.number_of_port = list(comport)[0] 
-   
+                G.number_of_port = list(comport)[0]
                 print (f"the number_of_port is {G.number_of_port}")
 
 
@@ -229,42 +207,18 @@ if __name__ == '__main__':
     init()
     uart_init()
 
-    try:
-        # ser = serial.Serial(G.number_of_port, 115200)    # 打开COM17，将波特率配置为115200，其余参数使用默认值
-        # ser = serial.Serial()  
-        # ser.port = G.number_of_port
-        # ser.baudrate = 115200
-        # ser.open()
-        ser = serial.Serial("/dev/ttyUSB0", 115200)    # 打开COM17，将波特率配置为115200，其余参数使用默认值
-
-        print(f"port is {G.number_of_port}")
-        print(ser.name)
-        
-        
-    except:
-        print("serial not open")
-        pass
+    ser = serial.Serial(G.number_of_port, 115200)    # 打开COM17，将波特率配置为115200，其余参数使用默认值
+    if ser.isOpen():                        # 判断串口是否成功打开
+        print("打开串口成功。")
+        print(ser.name)    # 输出串口号
     else:
+        print("打开串口失败。")
 
-        # try:
-        #     ser.open()
-        # except Exception:
-        #     print("error open serial port")
-        
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    host, port = s.getsockname()
+    localhost = s.getsockname()[0]
 
-        if ser.isOpen():                        # 判断串口是否成功打开
-            print("打开串口成功。")
-            print(ser.name)    # 输出串口号
-        else:
-            print("打开串口失败。")
-            ser.close()
-    
-
-    #s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #s.connect(("8.8.8.8", 80))
-    #localhost = s.getsockname()[0]
-
-    localhost = "192.168.30.1"
     print(f"localhost ip is {localhost}")
 
     ''' Create sever for master'''
@@ -279,9 +233,7 @@ if __name__ == '__main__':
     threading.Thread(target=accept_master, daemon=True,args=(to_master_sock, )).start()
 
     ''' Create sever for Web'''
-    #localhost_to_web = socket.gethostname()
-    localhost_to_web = "192.168.30.1" #Jasper20240820
-    print(f"local server for web socket {localhost_to_web} and port of {web_port}")
+    localhost_to_web = socket.gethostname()
     
     to_web_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     to_web_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)	
@@ -319,10 +271,8 @@ if __name__ == '__main__':
                 if "update_main" in G.buff_for_web: #update file through uart
                     print("update python code for newBodyguardPicoMaster.py and send to UART")
                     try:
-                        # filepath = "C:/Users/Jasper/pico-master/newBodyguardPicoMaster.py"
-
-                        filepath = "/home/jasper/Projects/pico-server/newBodyguardPicoMaster.py"
-
+                        #filepath = "C:/Users/Jasper/pico-master/newBodyguardPicoMaster.py"
+                        filepath = "C:/Users/Jasper/pico-master/newBodyguardPicoMaster.py"
                         with open(filepath, 'rb') as file:
                             content = file.read()  # 读取文件内容
                             print(content)
@@ -364,12 +314,7 @@ if __name__ == '__main__':
                             if G.state_dict_last != state_dict:
                                 G.state_dict_last = state_dict
                                 if (type(state_dict).__name__=='dict'):
-                                    print("start to operate database")
-                                    try:
-                                        opreate_db(state_dict)
-                                        print("operate data database sucessfully")
-                                    except:
-                                        print("database operate failure")
+                                    opreate_db(state_dict)
 
                             # state_dict = eval(G.compare_temp)
                             # if G.state_dict_last != state_dict:

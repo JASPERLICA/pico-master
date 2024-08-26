@@ -1,12 +1,12 @@
 #BodyguardPicoMaster
-#update date&time : 2024/08/14
-VERSION =  1.04
+#update date&time : 2024/08/26
+VERSION =  '1.06'
 
 try:
     import usocket as socket
 except:
     import socket
-from machine import Pin,SPI,UART,I2C,WDT
+from machine import Pin,SPI,UART,I2C,WDT,PWM
 from sys import exit
 from I2C_LCD import I2CLcd
 import urequests
@@ -15,14 +15,14 @@ import time
 import _thread
 import json
 import BME280
-
+from time import sleep
 
 #define a global variable
 TERMINATION_CHAR            = '\n'
 SERIAL_TERMINATION_CHAR     = '\r'
-#NUC_IP = "192.168.30.1"   #server running on my Jasper_server linux NUC
+NUC_IP = "192.168.30.1"   #server running on my Jasper_server linux NUC
 
-NUC_IP = "192.168.20.104"   #server running on my Japer li pc
+#NUC_IP = "192.168.20.104"   #server running on my Japer li pc
 #NUC_IP = "192.168.0.102"   #server running on my Japer li pc at home network
 PORT_NUMBER = 10001
 
@@ -107,12 +107,12 @@ state_dict['Poe_Sw']    = 'ON'
 # DHT_pin      = Pin(19, Pin.OUT, Pin.PULL_DOWN) 
 # global_lock  = False   
 
-Channel0    =  Pin(8, Pin.OUT)                  # GP5 as Channel 0 LED panel
-Channel1    =  Pin(9, Pin.OUT)                  # GP6 as Channel 1 LED panel
-Channel2    =  Pin(22, Pin.OUT)                  # GP7 as Channel 2 LED panel
-Channel3    =  Pin(19, Pin.OUT)                 # GP15 as Channel 3 LED panel
-RelayNuc    =  Pin(26, Pin.OUT)                  # GP4 as Relay for Nuc
-RelayPoe    =  Pin(27, Pin.OUT)                  # GP3 as Realy for POE
+Channel0    =  Pin(8, Pin.OUT)                  # GP8 as Channel 0 LED panel
+Channel1    =  Pin(9, Pin.OUT)                  # GP9 as Channel 1 LED panel
+Channel2    =  Pin(14, Pin.OUT)                  # GP14 as Channel 2 LED panel
+Channel3    =  Pin(22, Pin.OUT)                 # GP22 as Channel 3 LED panel
+RelayNuc    =  Pin(27, Pin.OUT)                  # GP27 as Relay for Nuc
+RelayPoe    =  Pin(26, Pin.OUT)                  # GP26 as Realy for POE
 
 Power_LCD_Sensor   =  Pin(2, Pin.OUT)                  # GP5 as Channel 0 LED panel
 
@@ -122,7 +122,7 @@ ButtonPageDn =  Pin(4, Pin.IN, Pin.PULL_UP)    # Check the message Down to next
 wiznet_reset =  Pin(20, Pin.OUT)    #wiznet reset
 MCU_reset    =  Pin(3, Pin.OUT)     #mcu reset
 MCU_run_led  =  Pin(15, Pin.OUT)     #mcu reset
-Fun          =  Pin(5, Pin.OUT)                  # GP5 as Channel 0 LED panel
+Fun          =  Pin(10, Pin.OUT)                  # GP5 as fun
 
 Channel0.value(False)
 Channel1.value(False)
@@ -134,6 +134,16 @@ Power_LCD_Sensor.value(True)
 Fun.value(False)
 # i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
 i2c = I2C(0, sda=Pin(12), scl=Pin(13), freq=400000)
+
+
+# Set up PWM Pin
+led_panel = Pin(5)
+led_pwm = PWM(led_panel)
+duty_step = 129 #8192  # Step size for changing the duty cycle
+
+#Set PWM frequency
+frequency = 500
+led_pwm.freq (frequency)
 
 # Bodyguard tower DHCP configuration
 # def w5100_init():
@@ -150,7 +160,7 @@ i2c = I2C(0, sda=Pin(12), scl=Pin(13), freq=400000)
             
 def bodyguard_master_receiver(s,):
     global receiver_disconnected_flag,state_dict,reset_command_flag,\
-        time_NUC_alive,lcdFirstLine,lcdSecondLine,time_command
+        time_NUC_alive,lcdFirstLine,lcdSecondLine,time_command,led_pwm
             # command_display_mode,sensor
     full_msg = ''
     while True:
@@ -178,7 +188,7 @@ def bodyguard_master_receiver(s,):
             
             if msg != "ALIVE":
                 if lcd_idle:
-                    lcdFirstLine = "Excute Command"
+                    lcdFirstLine = "Execute Command"
                     lcdSecondLine = msg
                     lcd_flash(lcdFirstLine,lcdSecondLine)
                     command_display_mode = True
@@ -241,6 +251,12 @@ def bodyguard_master_receiver(s,):
                 time.sleep(2)
                 RelayNuc.value(False)
                 state_dict['Computer'] = 'ON'
+            
+            elif msg == "LED_BRIGHTER"or msg == "led_brighter":
+                led_pwm.duty_u16(65530)
+            
+            elif msg == "LED_DIM"or msg == "led_dim":
+                led_pwm.duty_u16(200)
     
             elif msg == "RESET"or msg == "reset":
                 reset_command_flag = True
@@ -485,6 +501,25 @@ def main():
 
     wdt.feed()
     
+
+    # while True:
+    # #   # Increase the duty cycle gradually
+    # #   for duty_cycle in range(0, 65536, duty_step):
+    # #     led_pwm.duty_u16(duty_cycle)
+    #     led_pwm.duty_u16(65530)
+    #     wdt.feed()
+    #     sleep(2)
+        
+    #   # Decrease the duty cycle gradually
+    # #   for duty_cycle in range(65536, 0, -duty_step):
+    # #     led_pwm.duty_u16(duty_cycle)
+    # #     wdt.feed()
+    # #     sleep(0.05)
+
+    #     led_pwm.duty_u16(200)
+    #     wdt.feed()
+    #     sleep(2)
+
     while True:
         
         # No.1  feed watchdog
@@ -683,6 +718,7 @@ def main():
                     if page > max_page:
                         page = 0
                     
+
                     temppage = page_list[page]
                     str2 = state_dict.get(temppage)
                     str1 = temppage + ":" + str2 
