@@ -37,6 +37,7 @@ command_display_mode        = False
 temperature_reading_mode    = False
 file_update_mode            = False
 Run_led_flip            	= False
+new_command                 = False
 lcdFirstLine    = ""
 lcdSecondLine   = ""
 
@@ -160,17 +161,19 @@ led_pwm.freq (frequency)
             
 def bodyguard_master_receiver(s,):
     global receiver_disconnected_flag,state_dict,reset_command_flag,\
-        time_NUC_alive,lcdFirstLine,lcdSecondLine,time_command,led_pwm
-            # command_display_mode,sensor
-    full_msg = ''
+        time_NUC_alive,lcdFirstLine_c,lcdSecondLine_c,time_command,led_pwm,\
+            command_display_mode,new_command
+    # full_msg = ''
     while True:
         try:
             # No.A waiting for message from NUC
             msg_data = s.recv(128)
             msg = msg_data.decode("utf-8")
             if msg == " ":
+                print("msg == empty")
                 break
             elif len(msg) == 0:
+                print("length of msg == 0")
                 break
             #temp = msg.split("/")
             print(msg)
@@ -187,12 +190,13 @@ def bodyguard_master_receiver(s,):
             # s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
             
             if msg != "ALIVE":
-                if lcd_idle:
-                    lcdFirstLine = "Execute Command"
-                    lcdSecondLine = msg
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
-                    command_display_mode = True
-                    time_command    = time.time()
+                # if lcd_idle:
+                lcdFirstLine_c = "Execute Command"
+                lcdSecondLine_c = msg
+                # lcd_flash(lcdFirstLine,lcdSecondLine)
+                command_display_mode = True
+                new_command = True
+                time_command    = time.time()
             # No.B command handle
             if msg == "ALL ON" or msg == "all on":
                 Channel0.value(True)    #ON
@@ -269,10 +273,10 @@ def bodyguard_master_receiver(s,):
                     time_NUC_alive = time.time()
                     print(f"recevied {msg} at {time_NUC_alive}")
 
-        except:
-            print("Bodyguard server disconnected,recever thread exit")
-            receiver_disconnected_flag = True
-            exit()
+        except Exception as e:
+            print(f"Bodyguard server disconnected,recever thread exit:{e}")
+            # receiver_disconnected_flag = True #20240827
+            # exit()
 
 
 
@@ -281,11 +285,15 @@ def lcd_initial():
     global lcd,lcd_exist,lcd_idle, i2c
     # i2c = I2C(1, sda=Pin(26), scl=Pin(27), freq=400000)
     devices = i2c.scan()
+    # print(f"first I2C device is {devices[0]}")
+    # print(f"second I2C device is {devices[1]}")
+    LCD_IIC_address = 0x27
     lcd_exist = False
     try:
         if devices != []:
             lcd_exist = True
-            lcd = I2CLcd(i2c, devices[0], 2, 16)
+            # lcd = I2CLcd(i2c, devices[0], 2, 16)
+            lcd = I2CLcd(i2c, LCD_IIC_address, 2, 16)
             lcdFirstLine = "Bodyguard Master"
             lcdSecondLine = "Initialization.."
             if lcd_idle:
@@ -341,7 +349,12 @@ def temper_hum_pres_reading():
     except Exception as e:
         # Handle any exceptions during sensor reading
         print('An error occurred:', e)
-        return(ambinent)
+        Power_LCD_Sensor.value(True)
+        sleep(.6)
+        Power_LCD_Sensor.value(False)
+        sleep(.2)
+        lcd_initial()
+        return None
 
 def w5100_init():
 
@@ -413,7 +426,8 @@ def uart_init():
 def main():
     
     global receiver_disconnected_flag, state_dict,reset_command_flag,\
-        lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command,I2C,Run_led_flip
+        lcd_exist,lcd,lcd_idle,time_NUC_alive,time_command,I2C,Run_led_flip,\
+            new_command,command_display_mode,lcdFirstLine_c,lcdSecondLine_c
             # temperature_reading_mode,global_lock
 
     # No.1 gpio_initial_value
@@ -429,6 +443,7 @@ def main():
     
     # No.2 LCD initializationc
     Power_LCD_Sensor.value(False)
+    #Power_LCD_Sensor.value(True)
     lcd_initial()
 
     # No.3 Reset NUC
@@ -581,8 +596,8 @@ def main():
                     Channel3.value(False)   #OFF
                     state_dict['Channel3'] = 'OFF'
 
-                    data_json = json.dumps(photoeye_dict)
-                    s.send(data_json.encode('utf-8'))
+                    # data_json = json.dumps(photoeye_dict)
+                    # s.send(data_json.encode('utf-8'))
 
                     try :
                         data_json2 = json.dumps(photoeye_dict)
@@ -659,30 +674,31 @@ def main():
                     temp1 = command_serial.split(TERMINATION_CHAR)
                     print(temp1)              
                     command_serial = temp1[-2]
+                
+
+                    lcdSecondLine   =  command_serial[0:15] # Maximum 16 charactes 
+                    if lcd_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
+
+                    if command_serial == "reset" or command_serial == "RESET": 
+                        reset_command_flag = True
+
+                    # elif "update" in command_serial:                   
+                    #     if "I2C_LCD.py" in command_serial:
+                    #         with open("version.txt","a") as f:
+                    #             f.writelines("newI2C_LCD.py")
+                    #             f.close()
+                    #     if "LCD_API.py" in command_serial:
+                    #         with open("version.txt","a") as f:
+                    #             f.writelines("newLCD_API.py")
+                    #             f.close()
+                    #     if "BodyguardPicoMaster.py" in command_serial:
+                    #         with open("version.txt","a") as f:
+                    #             f.writelines("newBodyguardPicoMaster.py")
+                    #             f.close()
+                        file_update_mode = True
                 except:
                     pass
-
-                lcdSecondLine   =  command_serial[0:15] # Maximum 16 charactes 
-                if lcd_idle:
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
-
-                if command_serial == "reset" or command_serial == "RESET": 
-                    reset_command_flag = True
-
-                # elif "update" in command_serial:                   
-                #     if "I2C_LCD.py" in command_serial:
-                #         with open("version.txt","a") as f:
-                #             f.writelines("newI2C_LCD.py")
-                #             f.close()
-                #     if "LCD_API.py" in command_serial:
-                #         with open("version.txt","a") as f:
-                #             f.writelines("newLCD_API.py")
-                #             f.close()
-                #     if "BodyguardPicoMaster.py" in command_serial:
-                #         with open("version.txt","a") as f:
-                #             f.writelines("newBodyguardPicoMaster.py")
-                #             f.close()
-                    file_update_mode = True
             else:
                 try:
                     file_data = data1.decode('utf-8')
@@ -799,28 +815,41 @@ def main():
             
             # No.D release lcd
             if command_display_mode == True:
+                if new_command == True:
+                    new_command = False
+                    if lcd_idle:
+                        lcd_flash(lcdFirstLine_c,lcdSecondLine_c)
+
                 if time.time() - time_command >= 3:
                     lcdFirstLine = " "
                     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
                     if lcd_idle:
                         lcd_flash(lcdFirstLine,lcdSecondLine)
+                    command_display_mode = False
             
             #No.E temperture reading
             ambinent_TAP = temper_hum_pres_reading()
             if ambinent_TAP is not None:
-                state_dict['Temper'] = ambinent_TAP[0]
-                state_dict['Humidity'] = ambinent_TAP[1]
-                print(f"the tempture is {state_dict['Temper']}")
-                
-                temp0 = state_dict['Temper'].split("C", 1)
+                try:
+                    state_dict['Temper'] = ambinent_TAP[0]
+                    state_dict['Humidity'] = ambinent_TAP[1]
+                    print(f"the tempture is {state_dict['Temper']}")
+                    
+                    temp0 = state_dict['Temper'].split("C", 1)
 
-                # temp0 = state_dict['Temper'][:4]
-                print(temp0[0])
-                temp2 = float(temp0[0])
-                if temp2 >= 22 :
-                    Fun.value(True)
-                elif temp2 <= 18 :        
-                    Fun.value(False)
+                    # temp0 = state_dict['Temper'][:4]
+                    print(temp0[0])
+                    temp2 = float(temp0[0])
+                    if temp2 >= 22 :
+                        Fun.value(True)
+                    elif temp2 <= 18 :        
+                        Fun.value(False)
+                except:
+                    print("ambient_TAP reading error")
+            else:
+                state_dict['Temper'] = "0.0"
+                state_dict['Humidity'] = "0.0%"
+                
 
                 
 
