@@ -177,7 +177,7 @@ def bodyguard_master_receiver(s,):
                 command_display_mode = True              
                 time_command    = time.time()
             
-                if msg == "ALL_ON" or msg == "all_on":
+                if msg == "ALL ON" or msg == "all on":
                     Channel0.value(True)    #ON
                     state_dict['Channel0'] = 'ON'
                     Channel1.value(True)    #ON
@@ -186,7 +186,7 @@ def bodyguard_master_receiver(s,):
                     state_dict['Channel2'] = 'ON'
                     Channel3.value(True)    #ON
                     state_dict['Channel3'] = 'ON'
-                elif msg == "ALL_OFF" or msg == "all_off":
+                elif msg == "ALL OFF" or msg == "all off":
                     Channel0.value(False)   #OFF
                     state_dict['Channel0'] = 'OFF'
                     Channel1.value(False)   #OFF
@@ -221,25 +221,25 @@ def bodyguard_master_receiver(s,):
                     Channel3.value(False)   #OFF
                     state_dict['Channel3'] = 'OFF'
 
-                elif msg == "POE_RESET"or msg == "poe_reset":
+                elif msg == "POE RESET"or msg == "poe reset":
                     RelayPoe.value(True)
                     state_dict['Poe_Sw'] = 'OFF'
                     time.sleep(2)
                     RelayPoe.value(False)
                     state_dict['Poe_Sw'] = 'ON'
 
-                elif msg == "NUC_RESET"or msg == "nuc_reset":
+                elif msg == "NUC RESET"or msg == "nuc reset":
                     RelayNuc.value(True)
                     state_dict['Computer'] = 'OFF'
                     time.sleep(2)
                     RelayNuc.value(False)
                     state_dict['Computer'] = 'ON'
 
-                elif msg == "FUN_ON"or msg == "fun_on":
+                elif msg == "FUN ON"or msg == "fun on":
                     Fun.value(True)
                     state_dict['Fun'] = 'ON'
                     Fun_remote_on_flag = True
-                elif msg == "FUN_OFF"or msg == "fun_off":
+                elif msg == "FUN OFF"or msg == "fun off":
                     Fun.value(False)
                     state_dict['Fun'] = 'OFF'
                     Fun_remote_on_flag = False
@@ -273,6 +273,8 @@ def lcd_initial():
     # LCD_IIC_address = 0x27 #fixed ID
     lcd_exist = False
     devices = i2c.scan()
+    print(type(devices))
+    print(f"IIC devices list{devices}")
     try:
         if devices[0] == LCD_IIC_address:
             lcd_exist = True

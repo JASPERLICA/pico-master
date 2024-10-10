@@ -164,101 +164,97 @@ def bodyguard_master_receiver(s,):
 
             # s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
             
-            if msg == "ALIVE":     
-                command_display_mode = False
-                time_NUC_alive = time.time()
-                print(f"recevied {msg} at {time_NUC_alive}")
-                
-            else:
-                # No.B command handle
+            if msg != "ALIVE":     
+
                 lcdFirstLine_c = "Execute Command"
                 lcdSecondLine_c = msg
                 lcd_flash(lcdFirstLine_c,lcdSecondLine_c)
-                command_display_mode = True              
+                command_display_mode = True
+                
                 time_command    = time.time()
+            # No.B command handle
+            if msg == "ALL ON" or msg == "all on":
+                Channel0.value(True)    #ON
+                state_dict['Channel0'] = 'ON'
+                Channel1.value(True)    #ON
+                state_dict['Channel1'] = 'ON'
+                Channel2.value(True)    #ON
+                state_dict['Channel2'] = 'ON'
+                Channel3.value(True)    #ON
+                state_dict['Channel3'] = 'ON'
+            elif msg == "ALL OFF" or msg == "all off":
+                Channel0.value(False)   #OFF
+                state_dict['Channel0'] = 'OFF'
+                Channel1.value(False)   #OFF
+                state_dict['Channel1'] = 'OFF'
+                Channel2.value(False)   #OFF
+                state_dict['Channel2'] = 'OFF'
+                Channel3.value(False)   #OFF
+                state_dict['Channel3'] = 'OFF'
+
+            elif msg == "CHANNEL0_ON" or msg == "channel0_on":
+                Channel0.value(True)    #ON
+                state_dict['Channel0'] = 'ON'
+            elif msg == "CHANNEL0_OFF"or msg == "channel0_off":
+                Channel0.value(False)   #OFF
+                state_dict['Channel0'] = 'OFF'
+            elif msg == "CHANNEL1_ON" or msg == "channel1_on":
+                Channel1.value(True)    #ON
+                state_dict['Channel1'] = 'ON'
+            elif msg == "CHANNEL1_OFF"or msg == "channel1_off":
+                Channel1.value(False)   #OFF
+                state_dict['Channel1'] = 'OFF'
+            elif msg == "CHANNEL2_ON" or msg == "channel2_on":
+                Channel2.value(True)    #ON
+                state_dict['Channel2'] = 'ON'
+            elif msg == "CHANNEL2_OFF"or msg == "channel2_off":
+                Channel2.value(False)   #OFF
+                state_dict['Channel2'] = 'OFF'
+            elif msg == "CHANNEL3_ON" or msg == "channel3_on":
+                Channel3.value(True)    #ON
+                state_dict['Channel3'] = 'ON'
+            elif msg == "CHANNEL3_OFF"or msg == "channel3_off":
+                Channel3.value(False)   #OFF
+                state_dict['Channel3'] = 'OFF'
             
-                if msg == "ALL_ON" or msg == "all_on":
-                    Channel0.value(True)    #ON
-                    state_dict['Channel0'] = 'ON'
-                    Channel1.value(True)    #ON
-                    state_dict['Channel1'] = 'ON'
-                    Channel2.value(True)    #ON
-                    state_dict['Channel2'] = 'ON'
-                    Channel3.value(True)    #ON
-                    state_dict['Channel3'] = 'ON'
-                elif msg == "ALL_OFF" or msg == "all_off":
-                    Channel0.value(False)   #OFF
-                    state_dict['Channel0'] = 'OFF'
-                    Channel1.value(False)   #OFF
-                    state_dict['Channel1'] = 'OFF'
-                    Channel2.value(False)   #OFF
-                    state_dict['Channel2'] = 'OFF'
-                    Channel3.value(False)   #OFF
-                    state_dict['Channel3'] = 'OFF'
+            elif msg == "POE RESET"or msg == "poe reset":
+                RelayPoe.value(True)
+                state_dict['Poe_Sw'] = 'OFF'
+                time.sleep(2)
+                RelayPoe.value(False)
+                state_dict['Poe_Sw'] = 'ON'
 
-                elif msg == "CHANNEL0_ON" or msg == "channel0_on":
-                    Channel0.value(True)    #ON
-                    state_dict['Channel0'] = 'ON'
-                elif msg == "CHANNEL0_OFF"or msg == "channel0_off":
-                    Channel0.value(False)   #OFF
-                    state_dict['Channel0'] = 'OFF'
-                elif msg == "CHANNEL1_ON" or msg == "channel1_on":
-                    Channel1.value(True)    #ON
-                    state_dict['Channel1'] = 'ON'
-                elif msg == "CHANNEL1_OFF"or msg == "channel1_off":
-                    Channel1.value(False)   #OFF
-                    state_dict['Channel1'] = 'OFF'
-                elif msg == "CHANNEL2_ON" or msg == "channel2_on":
-                    Channel2.value(True)    #ON
-                    state_dict['Channel2'] = 'ON'
-                elif msg == "CHANNEL2_OFF"or msg == "channel2_off":
-                    Channel2.value(False)   #OFF
-                    state_dict['Channel2'] = 'OFF'
-                elif msg == "CHANNEL3_ON" or msg == "channel3_on":
-                    Channel3.value(True)    #ON
-                    state_dict['Channel3'] = 'ON'
-                elif msg == "CHANNEL3_OFF"or msg == "channel3_off":
-                    Channel3.value(False)   #OFF
-                    state_dict['Channel3'] = 'OFF'
+            elif msg == "NUC RESET"or msg == "nuc reset":
+                RelayNuc.value(True)
+                state_dict['Computer'] = 'OFF'
+                time.sleep(2)
+                RelayNuc.value(False)
+                state_dict['Computer'] = 'ON'
 
-                elif msg == "POE_RESET"or msg == "poe_reset":
-                    RelayPoe.value(True)
-                    state_dict['Poe_Sw'] = 'OFF'
-                    time.sleep(2)
-                    RelayPoe.value(False)
-                    state_dict['Poe_Sw'] = 'ON'
-
-                elif msg == "NUC_RESET"or msg == "nuc_reset":
-                    RelayNuc.value(True)
-                    state_dict['Computer'] = 'OFF'
-                    time.sleep(2)
-                    RelayNuc.value(False)
-                    state_dict['Computer'] = 'ON'
-
-                elif msg == "FUN_ON"or msg == "fun_on":
-                    Fun.value(True)
-                    state_dict['Fun'] = 'ON'
-                    Fun_remote_on_flag = True
-                elif msg == "FUN_OFF"or msg == "fun_off":
-                    Fun.value(False)
-                    state_dict['Fun'] = 'OFF'
-                    Fun_remote_on_flag = False
-                elif msg == "LED_BRIGHTER"or msg == "led_brighter":
-                    led_pwm.duty_u16(65530)
-
-                elif msg == "LED_DIM"or msg == "led_dim":
-                    led_pwm.duty_u16(200)
-
-                elif msg == "RESET"or msg == "reset":
-                    reset_command_flag = True
-                    # while True:
-                    #         time.sleep(1)
-                    #         print("waiting for self reset by not feeding watchdog")
-                    #         s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
-
-                # elif msg == "ALIVE"or msg == "alive":
-                #         time_NUC_alive = time.time()
-                #         print(f"recevied {msg} at {time_NUC_alive}")
+            elif msg == "FUN ON"or msg == "fun on":
+                Fun.value(True)
+                state_dict['Fun'] = 'ON'
+                Fun_remote_on_flag = True
+            elif msg == "FUN OFF"or msg == "fun off":
+                Fun.value(False)
+                state_dict['Fun'] = 'OFF'
+                Fun_remote_on_flag = False
+            elif msg == "LED_BRIGHTER"or msg == "led_brighter":
+                led_pwm.duty_u16(65530)
+            
+            elif msg == "LED_DIM"or msg == "led_dim":
+                led_pwm.duty_u16(200)
+    
+            elif msg == "RESET"or msg == "reset":
+                reset_command_flag = True
+                # while True:
+                #         time.sleep(1)
+                #         print("waiting for self reset by not feeding watchdog")
+                #         s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
+            
+            elif msg == "ALIVE"or msg == "alive":
+                    time_NUC_alive = time.time()
+                    print(f"recevied {msg} at {time_NUC_alive}")
 
         except Exception as e:
             print(f"Bodyguard server disconnected,recever thread exit:{e}")
@@ -278,6 +274,7 @@ def lcd_initial():
             lcd_exist = True
             # lcd = I2CLcd(i2c, devices[0], 2, 16)
             lcd = I2CLcd(i2c, LCD_IIC_address, 2, 16)
+            print("LCD is connected")
             lcdFirstLine = "Bodyguard Master"
             lcdSecondLine = "Initialization.."
 

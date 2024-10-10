@@ -1,0 +1,58 @@
+1. Data Packages from Master Board to Computer (JSON format):
+There are three types of data packages that the master board sends to the computer:
+
+Photoeye State:
+
+{"Photoeye":"ON"} → Indicates that the photoelectric sensor is triggered (ON).
+{"Photoeye":"OFF"} → Indicates that the photoelectric sensor is not triggered (OFF).
+Status Report:
+
+{"Status": data} → A status message that sends 8 bits of data, where each bit represents the state of a different component of the system.
+8-bit Status Data:
+Each bit in the status byte corresponds to a specific system state as follows:
+
+Bit     Position	Component	Bit Value	Description
+Bit 7	Photoeye	b'10000000'	Photoeye state (ON=1, OFF=0)
+Bit 6	Computer	b'01000000'	Computer running (ON=1, OFF=0)
+Bit 5	POE Switch	b'00100000'	POE switch status
+Bit 4	Fun	        b'00010000'	Fan status (ON=1, OFF=0)
+Bit 3	Channel 0	b'00001000'	Channel 0 LED panel status
+Bit 2	Channel 1	b'00000100'	Channel 1 LED panel status
+Bit 1	Channel 2	b'00000010'	Channel 2 LED panel status
+Bit 0	Channel 3	b'00000001'	Channel 3 LED panel status
+2. Commands from Computer to Master Board:
+The computer sends specific commands to control the system components. Each command is a string that triggers an action on the master board. Here are the available commands:
+
+System Control Commands:
+"ALIVE": Indicates that the computer is running properly (must be sent at least every 30 seconds).
+"RESET": Resets the entire system.
+Power and Channel Control Commands:
+"ALL ON": Turns all LED panels on.
+"ALL OFF": Turns all LED panels off.
+Individual Channel Control:
+"CHANNEL0_ON": Turns Channel 0 LED panel on.
+"CHANNEL0_OFF": Turns Channel 0 LED panel off.
+"CHANNEL1_ON": Turns Channel 1 LED panel on.
+"CHANNEL1_OFF": Turns Channel 1 LED panel off.
+"CHANNEL2_ON": Turns Channel 2 LED panel on.
+"CHANNEL2_OFF": Turns Channel 2 LED panel off.
+"CHANNEL3_ON": Turns Channel 3 LED panel on.
+"CHANNEL3_OFF": Turns Channel 3 LED panel off.
+POE and NUC Control:
+"POE RESET": Resets the POE (Power over Ethernet) network switch.
+"NUC RESET": Resets the NUC computer power.
+Fan Control:
+"FUN ON": Turns the fan on.
+"FUN OFF": Turns the fan off.
+LED Brightness Control:
+"LED_BRIGHTER": Increases LED panel brightness.
+"LED_DIM": Decreases LED panel brightness.
+
+
+
+
+
+
+
+
+

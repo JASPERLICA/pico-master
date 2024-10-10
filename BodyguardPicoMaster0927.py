@@ -1,6 +1,6 @@
 #BodyguardPicoMaster
-#update date&time : 2024/10/10
-VERSION =  '1.00'
+#update date&time : 2024/09/27
+VERSION =  '1.07'
 # 
 try:
     import usocket as socket
@@ -9,6 +9,7 @@ except:
 from machine import Pin,SPI,UART,I2C,WDT,PWM
 from sys import exit
 from I2C_LCD import I2CLcd
+import urequests
 import network
 import time
 import _thread
@@ -19,7 +20,7 @@ from time import sleep
 #global variable defination
 TERMINATION_CHAR            = '\n'
 SERIAL_TERMINATION_CHAR     = '\r'
-NUC_IP                      = "192.168.30.1"      
+NUC_IP                      = "192.168.30.1"      #linux NUC
 PORT_NUMBER                 = 10001
 WATCHDOG_PERIOD             = 4000 
 
@@ -32,7 +33,7 @@ command_display_mode        = False
 temperature_reading_mode    = False
 file_update_mode            = False
 Run_led_flip            	= False
-Fun_remote_on_flag          = False
+new_command                 = False
 
 time_NUC_alive              = time.time()
 time_command                = time.time()
@@ -46,7 +47,6 @@ photoeye_dict = {'Photoeye': 'OFF'
 state_dict = {'Photoeye': 'OFF', 
             'Computer': 'ON', 
             'Poe_Sw': 'ON',
-            'Fun': 'OFF',
             'Channel0': 'OFF',
             'Channel1': 'OFF',
             'Channel2': 'OFF',
@@ -55,13 +55,10 @@ state_dict = {'Photoeye': 'OFF',
             'Humidity' : '0',
             'Version': VERSION
             }
-state_dict_in_bits = 0 # 
-
 
 page_list = ['Photoeye', 
             'Computer', 
             'Poe_Sw',
-            'Fun',
             'Channel0',
             'Channel1',
             'Channel2',
@@ -77,11 +74,6 @@ state_dict['Channel2']  = 'OFF'
 state_dict['Channel3']  = 'OFF'
 state_dict['Computer']  = 'ON'
 state_dict['Poe_Sw']    = 'ON'
-
-Temperature_for_Fun_start = 33
-Temperature_for_Fun_stop  = 27
-Command_letters_max       = 24
-LCD_IIC_address           = 0x27
 
 # Bodyguard Pinout definition
 Channel0        =  Pin(8, Pin.OUT)                  # GP8 as Channel 0 LED panel
@@ -111,7 +103,8 @@ i2c         = I2C(0, sda=Pin(12), scl=Pin(13), freq=400000)
 i2c_sensor  = I2C(1, sda=Pin(14), scl=Pin(15), freq=400000)
 
 #UART pinout
-uart      = UART(0, baudrate=115200, tx=uart_tx, rx=uart_rx,timeout=1)
+# uart      = UART(0, baudrate=115200, tx=uart_tx, rx=uart_rx,timeout=1)
+
 
 # Bodyguard Pinout default value
 Channel0.value(False)
@@ -122,6 +115,7 @@ RelayNuc.value(False)
 RelayPoe.value(False)
 LCD_Sensor.value(False)
 Fun.value(False)
+
 
 # Set up PWM Pin
 led_panel = Pin(5)
@@ -137,7 +131,7 @@ led_pwm.freq (frequency)
 def bodyguard_master_receiver(s,):
     global receiver_disconnected_flag,state_dict,reset_command_flag,\
         time_NUC_alive,lcdFirstLine_c,lcdSecondLine_c,time_command,led_pwm,\
-            command_display_mode,IIC_idle,Fun_remote_on_flag
+            command_display_mode,new_command,IIC_idle
     # full_msg = ''
     while True:
         try:
@@ -164,101 +158,94 @@ def bodyguard_master_receiver(s,):
 
             # s.send(bytes(f"Master board received from NUC: {msg} ","utf-8"))
             
-            if msg == "ALIVE":     
-                command_display_mode = False
-                time_NUC_alive = time.time()
-                print(f"recevied {msg} at {time_NUC_alive}")
-                
-            else:
-                # No.B command handle
-                lcdFirstLine_c = "Execute Command"
-                lcdSecondLine_c = msg
-                lcd_flash(lcdFirstLine_c,lcdSecondLine_c)
-                command_display_mode = True              
-                time_command    = time.time()
+            if msg != "ALIVE":
+                if IIC_idle:
+                    lcdFirstLine_c = "Execute Command"
+                    lcdSecondLine_c = msg
+                    lcd_flash(lcdFirstLine_c,lcdSecondLine_c)
+                    command_display_mode = True
+                    new_command = True
+                    time_command    = time.time()
+            # No.B command handle
+            if msg == "ALL ON" or msg == "all on":
+                Channel0.value(True)    #ON
+                state_dict['Channel0'] = 'ON'
+                Channel1.value(True)    #ON
+                state_dict['Channel1'] = 'ON'
+                Channel2.value(True)    #ON
+                state_dict['Channel2'] = 'ON'
+                Channel3.value(True)    #ON
+                state_dict['Channel3'] = 'ON'
+            elif msg == "ALL OFF" or msg == "all off":
+                Channel0.value(False)   #OFF
+                state_dict['Channel0'] = 'OFF'
+                Channel1.value(False)   #OFF
+                state_dict['Channel1'] = 'OFF'
+                Channel2.value(False)   #OFF
+                state_dict['Channel2'] = 'OFF'
+                Channel3.value(False)   #OFF
+                state_dict['Channel3'] = 'OFF'
+
+            elif msg == "CHANNEL0_ON" or msg == "channel0_on":
+                Channel0.value(True)    #ON
+                state_dict['Channel0'] = 'ON'
+            elif msg == "CHANNEL0_OFF"or msg == "channel0_off":
+                Channel0.value(False)   #OFF
+                state_dict['Channel0'] = 'OFF'
+            elif msg == "CHANNEL1_ON" or msg == "channel1_on":
+                Channel1.value(True)    #ON
+                state_dict['Channel1'] = 'ON'
+            elif msg == "CHANNEL1_OFF"or msg == "channel1_off":
+                Channel1.value(False)   #OFF
+                state_dict['Channel1'] = 'OFF'
+            elif msg == "CHANNEL2_ON" or msg == "channel2_on":
+                Channel2.value(True)    #ON
+                state_dict['Channel2'] = 'ON'
+            elif msg == "CHANNEL2_OFF"or msg == "channel2_off":
+                Channel2.value(False)   #OFF
+                state_dict['Channel2'] = 'OFF'
+            elif msg == "CHANNEL3_ON" or msg == "channel3_on":
+                Channel3.value(True)    #ON
+                state_dict['Channel3'] = 'ON'
+            elif msg == "CHANNEL3_OFF"or msg == "channel3_off":
+                Channel3.value(False)   #OFF
+                state_dict['Channel3'] = 'OFF'
             
-                if msg == "ALL_ON" or msg == "all_on":
-                    Channel0.value(True)    #ON
-                    state_dict['Channel0'] = 'ON'
-                    Channel1.value(True)    #ON
-                    state_dict['Channel1'] = 'ON'
-                    Channel2.value(True)    #ON
-                    state_dict['Channel2'] = 'ON'
-                    Channel3.value(True)    #ON
-                    state_dict['Channel3'] = 'ON'
-                elif msg == "ALL_OFF" or msg == "all_off":
-                    Channel0.value(False)   #OFF
-                    state_dict['Channel0'] = 'OFF'
-                    Channel1.value(False)   #OFF
-                    state_dict['Channel1'] = 'OFF'
-                    Channel2.value(False)   #OFF
-                    state_dict['Channel2'] = 'OFF'
-                    Channel3.value(False)   #OFF
-                    state_dict['Channel3'] = 'OFF'
+            elif msg == "POE RESET"or msg == "poe reset":
+                RelayPoe.value(True)
+                state_dict['Poe_Sw'] = 'OFF'
+                time.sleep(2)
+                RelayPoe.value(False)
+                state_dict['Poe_Sw'] = 'ON'
 
-                elif msg == "CHANNEL0_ON" or msg == "channel0_on":
-                    Channel0.value(True)    #ON
-                    state_dict['Channel0'] = 'ON'
-                elif msg == "CHANNEL0_OFF"or msg == "channel0_off":
-                    Channel0.value(False)   #OFF
-                    state_dict['Channel0'] = 'OFF'
-                elif msg == "CHANNEL1_ON" or msg == "channel1_on":
-                    Channel1.value(True)    #ON
-                    state_dict['Channel1'] = 'ON'
-                elif msg == "CHANNEL1_OFF"or msg == "channel1_off":
-                    Channel1.value(False)   #OFF
-                    state_dict['Channel1'] = 'OFF'
-                elif msg == "CHANNEL2_ON" or msg == "channel2_on":
-                    Channel2.value(True)    #ON
-                    state_dict['Channel2'] = 'ON'
-                elif msg == "CHANNEL2_OFF"or msg == "channel2_off":
-                    Channel2.value(False)   #OFF
-                    state_dict['Channel2'] = 'OFF'
-                elif msg == "CHANNEL3_ON" or msg == "channel3_on":
-                    Channel3.value(True)    #ON
-                    state_dict['Channel3'] = 'ON'
-                elif msg == "CHANNEL3_OFF"or msg == "channel3_off":
-                    Channel3.value(False)   #OFF
-                    state_dict['Channel3'] = 'OFF'
+            elif msg == "NUC RESET"or msg == "nuc reset":
+                RelayNuc.value(True)
+                state_dict['Computer'] = 'OFF'
+                time.sleep(2)
+                RelayNuc.value(False)
+                state_dict['Computer'] = 'ON'
 
-                elif msg == "POE_RESET"or msg == "poe_reset":
-                    RelayPoe.value(True)
-                    state_dict['Poe_Sw'] = 'OFF'
-                    time.sleep(2)
-                    RelayPoe.value(False)
-                    state_dict['Poe_Sw'] = 'ON'
+            elif msg == "FUN ON"or msg == "fun on":
+                Fun.value(True)
+            elif msg == "FUN OFF"or msg == "fun off":
+                Fun.value(False)
 
-                elif msg == "NUC_RESET"or msg == "nuc_reset":
-                    RelayNuc.value(True)
-                    state_dict['Computer'] = 'OFF'
-                    time.sleep(2)
-                    RelayNuc.value(False)
-                    state_dict['Computer'] = 'ON'
-
-                elif msg == "FUN_ON"or msg == "fun_on":
-                    Fun.value(True)
-                    state_dict['Fun'] = 'ON'
-                    Fun_remote_on_flag = True
-                elif msg == "FUN_OFF"or msg == "fun_off":
-                    Fun.value(False)
-                    state_dict['Fun'] = 'OFF'
-                    Fun_remote_on_flag = False
-                elif msg == "LED_BRIGHTER"or msg == "led_brighter":
-                    led_pwm.duty_u16(65530)
-
-                elif msg == "LED_DIM"or msg == "led_dim":
-                    led_pwm.duty_u16(200)
-
-                elif msg == "RESET"or msg == "reset":
-                    reset_command_flag = True
-                    # while True:
-                    #         time.sleep(1)
-                    #         print("waiting for self reset by not feeding watchdog")
-                    #         s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
-
-                # elif msg == "ALIVE"or msg == "alive":
-                #         time_NUC_alive = time.time()
-                #         print(f"recevied {msg} at {time_NUC_alive}")
+            elif msg == "LED_BRIGHTER"or msg == "led_brighter":
+                led_pwm.duty_u16(65530)
+            
+            elif msg == "LED_DIM"or msg == "led_dim":
+                led_pwm.duty_u16(200)
+    
+            elif msg == "RESET"or msg == "reset":
+                reset_command_flag = True
+                # while True:
+                #         time.sleep(1)
+                #         print("waiting for self reset by not feeding watchdog")
+                #         s.send(bytes("waiting for self reset by not feeding watchdog","utf-8"))
+            
+            elif msg == "ALIVE"or msg == "alive":
+                    time_NUC_alive = time.time()
+                    print(f"recevied {msg} at {time_NUC_alive}")
 
         except Exception as e:
             print(f"Bodyguard server disconnected,recever thread exit:{e}")
@@ -269,19 +256,21 @@ def bodyguard_master_receiver(s,):
 
 def lcd_initial():
     #LCD display
-    global lcd,lcd_exist,IIC_idle, i2c,LCD_IIC_address
-    # LCD_IIC_address = 0x27 #fixed ID
-    lcd_exist = False
+    global lcd,lcd_exist,IIC_idle, i2c
     devices = i2c.scan()
+    # print(f"first I2C device is {devices[0]}")
+    # print(f"second I2C device is {devices[1]}")
+    LCD_IIC_address = 0x27 #fixed ID
+    lcd_exist = False
     try:
-        if devices[0] == LCD_IIC_address:
+        if devices != []:
             lcd_exist = True
             # lcd = I2CLcd(i2c, devices[0], 2, 16)
             lcd = I2CLcd(i2c, LCD_IIC_address, 2, 16)
             lcdFirstLine = "Bodyguard Master"
             lcdSecondLine = "Initialization.."
-
-            lcd_flash(lcdFirstLine,lcdSecondLine)
+            if IIC_idle:
+                lcd_flash(lcdFirstLine,lcdSecondLine)
             
         else:
             lcd_exist = False
@@ -292,19 +281,16 @@ def lcd_initial():
 
 def lcd_flash(firstLine,sencondLine):
         global lcd,lcd_exist,IIC_idle
-        if IIC_idle:
-            # if len(firstLine) == 0 or firstLine == " ":
-            #     firstLine = "Bodyguard Master"
-            if (lcd_exist == True):
-                if len(firstLine) == 0 or firstLine == " ":
-                    firstLine = "Bodyguard Master"
-                IIC_idle = False
-                lcd.clear()
-                lcd.move_to(0, 0)
-                lcd.putstr(firstLine)
-                lcd.move_to(0, 1)
-                lcd.putstr(sencondLine)
-                IIC_idle = True
+        if len(firstLine) == 0 or firstLine == " ":
+            firstLine = "Bodyguard Master"
+        if (lcd_exist == True):
+            IIC_idle = False
+            lcd.clear()
+            lcd.move_to(0, 0)
+            lcd.putstr(firstLine)
+            lcd.move_to(0, 1)
+            lcd.putstr(sencondLine)
+            IIC_idle = True
 
 def temper_hum_pres_reading():
     global i2c_sensor
@@ -369,8 +355,8 @@ def w5100_init():
             lcdFirstLine = "Bodyguard Master"
             lcdSecondLine = "Waiting IP addr"
             print("waiting DHCP address")
-            
-            lcd_flash(lcdFirstLine,lcdSecondLine)
+            if IIC_idle:
+                lcd_flash(lcdFirstLine,lcdSecondLine)
       
     print('IP address :', nic.ifconfig())
     while not nic.isconnected():
@@ -397,20 +383,20 @@ def socket_init():
             lcdFirstLine = f"{NUC_IP}"
             lcdSecondLine = "waiting socket"
             print("connecting PC server")
-            
-            lcd_flash(lcdFirstLine,lcdSecondLine)
+            if IIC_idle:
+                lcd_flash(lcdFirstLine,lcdSecondLine)
         
     print("Connection established...")
     lcdFirstLine = f"{NUC_IP}"
     lcdSecondLine = "established.."
-    
-    lcd_flash(lcdFirstLine,lcdSecondLine)
+    if IIC_idle:
+        lcd_flash(lcdFirstLine,lcdSecondLine)
 
 def uart_init():
 
     global uart
    
-    # uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1),timeout=1)
+    uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1),timeout=1)
     uart.init(bits=8, parity=None, stop=1)
     uart.write(bytes('Bodyguard Pico start...',"utf-8"))
 
@@ -430,23 +416,32 @@ def main():
     
     global receiver_disconnected_flag, state_dict,reset_command_flag,\
         lcd_exist,lcd,IIC_idle,time_NUC_alive,time_command,I2C,Run_led_flip,\
-            command_display_mode,lcdFirstLine_c,lcdSecondLine_c,uart,\
-            state_dict_in_bits
-    
+            new_command,command_display_mode,lcdFirstLine_c,lcdSecondLine_c,uart
             # temperature_reading_mode,global_lock
 
     # No.1 gpio_initial_value
+
+    # Channel0.value(False)
+    # Channel1.value(False)
+    # Channel2.value(False)
+    # Channel3.value(False)
+    # state_dict['Channel0'] = 'OFF'
+    # state_dict['Channel1'] = 'OFF'
+    # state_dict['Channel2'] = 'OFF'
+    # state_dict['Channel3'] = 'OFF'
     led_boards_all_off()
- 
+
+    
     # No.2 LCD initializationc
+    # LCD_Sensor.value(False)
     LCD_Sensor.value(True)
     lcd_initial()
 
     # No.3 Reset NUC
     lcdFirstLine    = ""
-    lcdSecondLine   =  "NUC starting"  
-    lcd_flash(lcdFirstLine,lcdSecondLine)
-
+    lcdSecondLine   =  "NUC starting"
+    if IIC_idle:
+        lcd_flash(lcdFirstLine,lcdSecondLine)
     RelayNuc.value(True)
     state_dict['Computer'] = 'OFF'
     time.sleep(2)
@@ -454,53 +449,84 @@ def main():
     state_dict['Computer'] = 'ON'
 
     # No.4 Reset SWITCH
-    lcdSecondLine   =  "SWITCH starting" 
-    lcd_flash(lcdFirstLine,lcdSecondLine)
-
+    lcdSecondLine   =  "SWITCH starting"
+    if IIC_idle:
+        lcd_flash(lcdFirstLine,lcdSecondLine)
     RelayPoe.value(True)
     state_dict['Poe_Sw'] = 'OFF'
     time.sleep(2)
     RelayPoe.value(False)
     state_dict['Poe_Sw'] = 'ON'
-
     reset_command_flag = False
     
     # No.5 Ethernet initialation
-    lcdSecondLine   =  "Wiznet starting"  
-    lcd_flash(lcdFirstLine,lcdSecondLine)
+    lcdSecondLine   =  "Wiznet starting"
+    if IIC_idle:
+        lcd_flash(lcdFirstLine,lcdSecondLine)
     w5100_init()
     time.sleep(.5)
 
     # No.6 UART Initialaztion
     lcdSecondLine   =  "UART starting"
-    
-    lcd_flash(lcdFirstLine,lcdSecondLine)
+    if IIC_idle:
+        lcd_flash(lcdFirstLine,lcdSecondLine)
     uart_init()
     time.sleep(.5)
 
     # No.7 Socket initialization
     socket_init()
 
-    # No.8 Creating secondary Thread for Receiving message from computer
+    # No.8 Creating Thread for Receiving message from computer
     time_NUC_alive = time.time() 
     _thread.start_new_thread(bodyguard_master_receiver,(s,)) #No deamon=True option in _thread
 
-    # No.9 View defult settiing
+    # No.9 start the watch dog
+    wdt = WDT(timeout=WATCHDOG_PERIOD)   
+    wdt.feed()                         
+    
+    # time.sleep(.5)
+    # print("I am here")
+    # # _thread.join()
+    # # No.10 temperture sensor
+    # # sensor = DHT11(DHT_pin)
+    # print("i am here 2")
+    wdt.feed()
+    #local veriable in main
+    # toggle =  True
+    state_dict['Photoeye'] = 'OFF'
+
     page = 0
-    max_page = 10
+    max_page = 9
     page_reading_mode   = False
     buttonPageDn_hold   = False
     last_time_update    = time.time()
 
     lcdFirstLine    = " "
-    lcdSecondLine   = "Running..."   
-    lcd_flash(lcdFirstLine,lcdSecondLine)
+    lcdSecondLine   = "Running..."
+    if IIC_idle:
+        lcd_flash(lcdFirstLine,lcdSecondLine)
 
-    # No.10 start the watch dog
-    wdt = WDT(timeout=WATCHDOG_PERIOD)   
-    wdt.feed()  
+    wdt.feed()
+    
 
-    # main thread
+    # while True:
+    # #   # Increase the duty cycle gradually
+    # #   for duty_cycle in range(0, 65536, duty_step):
+    # #     led_pwm.duty_u16(duty_cycle)
+    #     led_pwm.duty_u16(65530)
+    #     wdt.feed()
+    #     sleep(2)
+        
+    #   # Decrease the duty cycle gradually
+    # #   for duty_cycle in range(65536, 0, -duty_step):
+    # #     led_pwm.duty_u16(duty_cycle)
+    # #     wdt.feed()
+    # #     sleep(0.05)
+
+    #     led_pwm.duty_u16(200)
+    #     wdt.feed()
+    #     sleep(2)
+
     while True:
         
         # No.1  feed watchdog
@@ -536,10 +562,11 @@ def main():
                 except:
                     while True:
                         print("ethernet disconnected")
-                        lcdFirstLine    = "Ethernet"
-                        lcdSecondLine   = "Unreachable"
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
 
+                        # Channel0.value(False)
+                        # Channel1.value(False)
+                        # Channel2.value(False)
+                        # Channel3.value(False)
                         led_boards_all_off()
                         time.sleep(1)
 
@@ -549,8 +576,8 @@ def main():
 
                 lcdFirstLine    = ""
                 lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                
-                lcd_flash(lcdFirstLine,lcdSecondLine)
+                if IIC_idle:
+                    lcd_flash(lcdFirstLine,lcdSecondLine)
                 # time_update_time = time.time()      
         else:
             if  state_dict['Photoeye'] == 'ON':
@@ -578,10 +605,6 @@ def main():
                     except:
                         while True:
                             print("ethernet disconnected")
-                            lcdFirstLine    = "Ethernet"
-                            lcdSecondLine   = "Unreachable"
-                            lcd_flash(lcdFirstLine,lcdSecondLine)
-
                             led_boards_all_off()
                             time.sleep(1)
 
@@ -591,8 +614,8 @@ def main():
                     print(f"Photoeye:{state_dict['Photoeye']}")
 
                     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                 
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+                    if IIC_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
         # No.4 check if socket disconneted
         if receiver_disconnected_flag == True:
             print("main thread exit....")
@@ -605,7 +628,7 @@ def main():
         if (time.time() - time_NUC_alive) >= 30: #POE switch restarting need 30s
             print(time.time())
             print(time_NUC_alive)
-            print("over 30's no responding")
+            print("over 30's no response")
 
             #Network is found disconnected 
             wdt.feed()
@@ -616,15 +639,15 @@ def main():
             if uart.any(): 
                 data2 = uart.read()
                 command_serial = data2.decode('utf-8')
-                serial_data = command_serial.split(TERMINATION_CHAR)
-                print(f"command_received {serial_data}")
-                command_serial2 = serial_data[-1]
+                temp1 = command_serial.split(TERMINATION_CHAR)
+                print(f"command_received {temp1}")
+                command_serial2 = temp1[-1]
                 if command_serial2 == "ALIVE":
                     RelayPoe.value(True)
                     state_dict['Poe_Sw'] = 'OFF'
-                    lcdSecondLine   =  "POE restarting"
-                    
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+                    lcdSecondLine   =  "Switch resetting"
+                    if IIC_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
                     wdt.feed()
                     time.sleep(2)
                     RelayPoe.value(False)
@@ -635,26 +658,29 @@ def main():
                 while True:
                         print("NUC restarting")
                         lcdSecondLine   =  "NUC restarting"
+                        if IIC_idle:
+                            lcd_flash(lcdFirstLine,lcdSecondLine)
 
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
                         led_boards_all_off()
                         time.sleep(1)
 
         # No.6 reading data from UART
                 
         if uart.any(): 
-            raw_data = uart.read()
-            if len(raw_data) <= Command_letters_max: #command should less than 24 bytes
+            data1 = uart.read()
+            if len(data1) <= 16: #command
             # if not file_update_mode:
-                uart.write(f"uart receiced {raw_data}")
+                uart.write(f"uart receiced {data1}")
                 try:
-                    command_serial = raw_data.decode('utf-8')
-                    serial_data = command_serial.split(TERMINATION_CHAR)
-                    print(serial_data)              
-                    command_serial = serial_data[-2]
+                    command_serial = data1.decode('utf-8')
+                    temp1 = command_serial.split(TERMINATION_CHAR)
+                    print(temp1)              
+                    command_serial = temp1[-2]
                 
-                    lcdSecondLine   =  command_serial[0:15] # Maximum 16 charactes                   
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+
+                    lcdSecondLine   =  command_serial[0:15] # Maximum 16 charactes 
+                    if IIC_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
 
                     if command_serial == "reset" or command_serial == "RESET": 
                         reset_command_flag = True
@@ -663,14 +689,28 @@ def main():
                         print("serial receive serial test")
                         lcdFirstLine    =  "FROM SERIAL"
                         lcdSecondLine   =  "SERAIL TESTING"
-                        
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
+                        if IIC_idle:
+                            lcd_flash(lcdFirstLine,lcdSecondLine)
+
+                    # elif "update" in command_serial:                   
+                    #     if "I2C_LCD.py" in command_serial:
+                    #         with open("version.txt","a") as f:
+                    #             f.writelines("newI2C_LCD.py")
+                    #             f.close()
+                    #     if "LCD_API.py" in command_serial:
+                    #         with open("version.txt","a") as f:
+                    #             f.writelines("newLCD_API.py")
+                    #             f.close()
+                    #     if "BodyguardPicoMaster.py" in command_serial:
+                    #         with open("version.txt","a") as f:
+                    #             f.writelines("newBodyguardPicoMaster.py")
+                    #             f.close()
                         file_update_mode = True
                 except:
                     pass
-            else: #it is file
+            else:
                 try:
-                    file_data = raw_data.decode('utf-8')
+                    file_data = data1.decode('utf-8')
                 except:
                     print("wrong data from UART")
                 if file_data.find("#BodyguardPicoMaster") == 0:
@@ -684,10 +724,10 @@ def main():
                             f.flush()
                             f.close()
                     while(True):
-
-                        lcdFirstLine    = "Firmware Updated"
-                        lcdSecondLine   = "Restarting..."
-                        lcd_flash(lcdFirstLine,lcdSecondLine)
+                        # Channel0.value(False)
+                        # Channel1.value(False)
+                        # Channel2.value(False)
+                        # Channel3.value(False)
                         led_boards_all_off()
                         time.sleep(1)
                     
@@ -708,13 +748,15 @@ def main():
                     if page > max_page:
                         page = 0
                     
+
                     temppage = page_list[page]
                     str2 = state_dict.get(temppage)
                     str1 = temppage + ":" + str2 
                     print(str1)
 
-                    lcdSecondLine   =  str1                  
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+                    lcdSecondLine   =  str1
+                    if IIC_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
         else:
             if buttonPageDn_hold == True:
                 time.sleep(0.01)
@@ -729,54 +771,53 @@ def main():
                 MCU_run_led.value(True)
             else:
                 MCU_run_led.value(False)
-            
+            #print(state_dict.items())
+            # temperature_reading_mode = not temperature_reading_mode
+            # if temperature_reading_mode:
+            #     # No.E temperture reading
+            #     try:
+            #         t_reading  = (sensor.temperature)
+            #         h_reading = (sensor.humidity)
+            #     except:
+            #         print("temperture sensor malfuction")
+            #         pass
+            #     else:
+            #         state_dict['Temper'] = t_reading
+            #         state_dict['Humidity'] = h_reading
+            #         print(f"Temperature:{t_reading}")
+            #         print(f"Humidity:{h_reading}")
+            #     # print("Temperature: {}".format(sensor.temperature))
+            #     # print("Humidity: {}".format(sensor.humidity))
+
+            # else:
             # No.A  Update status to NUC
             # interval += 1 #update the new data to computer every 20 second 
             # if interval >= 10:
             #     interval =0
-
-            # No.A  Update status to NUC
-            state_dict_in_bits = 0  
-            if state_dict['Photoeye'] == 'ON':
-                state_dict_in_bits = (1 << 7)
-            if state_dict['Computer'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 6)
-            if state_dict['Poe_Sw'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 5)
-            if state_dict['Fun'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 4)
-            if state_dict['Channel0'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 3)
-            if state_dict['Channel1'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 2)
-            if state_dict['Channel2'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 1)
-            if state_dict['Channel3'] == 'ON':
-                state_dict_in_bits = state_dict_in_bits | (1 << 0)
-            print(f"state dict in bit is {state_dict_in_bits}")
-            # checksum = 0xaa ^ state_dict_in_bits
-            # state_dict_in_bits_array = [0xaa, state_dict_in_bits, checksum]
-            # data_dict = bytearray(state_dict_in_bits_array)
-
             try:
+                # s.send(bytes(f"{state_dict.items()} ","utf-8"))
+                
+                # s.send(bytes(f"{state_dict} ","utf-8"))
+
                 data_json = json.dumps(state_dict)
                 s.send(data_json.encode('utf-8'))
-                data_json_state_dict_in_bits = json.dumps({"Status":state_dict_in_bits})
-                s.send(data_json_state_dict_in_bits.encode('utf-8'))
                 #if disconnected for some reason, OSError: [Errno 104] ECONNRESET
             except:
                 while True:
                     print("Socket connection is dropped, waiting for self reset")
+                    # Channel0.value(False)
+                    # Channel1.value(False)
+                    # Channel2.value(False)
+                    # Channel3.value(False)
                     led_boards_all_off()
                     time.sleep(1)
 
-            # No.B  Update status to NUC over serial
-            uart.write(bytes("Linked","utf-8"))
+            # No.B  Update status to NUC
+            uart.write(bytes("ALIVE","utf-8"))
             # uart.write(bytes(f"{state_dict.items()} ","utf-8"))
             # uart.write(bytes(f"{str(state_dict)} ","utf-8"))
             
             # No.C  release LCD 
-
             # if page_reading_mode == False:
             #     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
             #     if IIC_idle:
@@ -791,48 +832,51 @@ def main():
                     page_reading_mode = False
                     page = 0
                     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                    
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+                    if IIC_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
             
             # No.D release lcd
             if command_display_mode == True:
+                # if new_command == True:
+                #     new_command = False
+                #     if IIC_idle:
+                #         lcd_flash(lcdFirstLine_c,lcdSecondLine_c)
 
                 if time.time() - time_command >= 3:
                     lcdFirstLine = " "
                     lcdSecondLine   = f"Photoeye:{state_dict['Photoeye']}"
-                    
-                    lcd_flash(lcdFirstLine,lcdSecondLine)
+                    if IIC_idle:
+                        lcd_flash(lcdFirstLine,lcdSecondLine)
                     command_display_mode = False
             
             #No.E temperture reading
-            
-            ambinent_TAP = temper_hum_pres_reading()
-            if ambinent_TAP is not None:
-                try:
-                    state_dict['Temper'] = ambinent_TAP[0]
-                    state_dict['Humidity'] = ambinent_TAP[1]
-                    print(f"the tempture is {state_dict['Temper']}")
-                    
-                    temp0 = state_dict['Temper'].split("C", 1)
+            if IIC_idle:
+                ambinent_TAP = temper_hum_pres_reading()
+                if ambinent_TAP is not None:
+                    try:
+                        state_dict['Temper'] = ambinent_TAP[0]
+                        state_dict['Humidity'] = ambinent_TAP[1]
+                        print(f"the tempture is {state_dict['Temper']}")
+                        
+                        temp0 = state_dict['Temper'].split("C", 1)
 
-                    # temp0 = state_dict['Temper'][:4]
-                    print(temp0[0])
-                    temperature = float(temp0[0])
-                    if temperature >= Temperature_for_Fun_start :
-                        Fun.value(True)
-                        state_dict['Fun'] = 'ON'
-                    elif temperature <= Temperature_for_Fun_stop and not Fun_remote_on_flag:        
-                        Fun.value(False)
-                        state_dict['Fun'] = 'OFF'
-                except:
-                    print("ambient_TAP reading error")
-            else:
-                state_dict['Temper'] = "0.0"
-                state_dict['Humidity'] = "0.0%"
+                        # temp0 = state_dict['Temper'][:4]
+                        print(temp0[0])
+                        temp2 = float(temp0[0])
+                        if temp2 >= 33 :
+                            Fun.value(True)
+                        elif temp2 <= 27 :        
+                            Fun.value(False)
+                    except:
+                        print("ambient_TAP reading error")
+                else:
+                    state_dict['Temper'] = "0.0"
+                    state_dict['Humidity'] = "0.0%"
                 
+
+                
+
 if __name__ == "__main__":
     main()
-
-
 
 
